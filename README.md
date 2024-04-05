@@ -1,2 +1,2 @@
 # pointnet
-This is the repo for experimenting with the pointnet and pointnet++ architecture.
+This is a repo where we apply transformer architecture on Dales dataset.
