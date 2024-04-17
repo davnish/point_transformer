@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
     print(f'Total_time: {end-start}')
 
-    if not os.path.exists(os.path.join("model", "best")):
-        os.makedirs(os.path.join("model", "best"))
-    torch.save(model.state_dict(), os.path.join("model", "checkpoint", f"model_{args.model_name}.pt"))
+    if not os.path.exists(os.path.join("models", "best")):
+        os.makedirs(os.path.join("models", "best"))
+    torch.save(model.state_dict(), os.path.join("models", "best", f"model_{args.model_name}.pt"))
     print(f"Model Saved at {args.epoch} epochs, named: model_{args.model_name}")
