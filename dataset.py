@@ -46,7 +46,7 @@ class modelnet40(Dataset):
         return self.data.shape[0]
 
 class Dales(Dataset):
-    def __init__(self, device, grid_size, points_taken, partition='train', not_norm=False):
+    def __init__(self, device, grid_size, points_taken, partition='train'):
        
         path = os.path.join("data", "Dales", f"{partition}", f"norm_{grid_size}_{points_taken}.npz")
         
@@ -70,7 +70,7 @@ class Dales(Dataset):
 
                     self.label = np.append(self.label, label, axis = 0)
 
-            if not_norm:
+            if partition == 'test':
                 np.savez(os.path.join("data", "Dales", f"{partition}", f"not_norm_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
             mn = np.min(self.data, axis = 1, keepdims=True)
             mx = np.max(self.data, axis = 1, keepdims=True)

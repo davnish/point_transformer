@@ -59,8 +59,7 @@ def test_loop(loader, loss_fn, model, device):
         
         y_true.extend(label.view(-1).cpu().tolist())
         y_preds.extend(preds.detach().cpu().tolist())
-        # np.savez('raw.npz', data1 = data.cpu(), y_true1 = y_true, y_preds1 = y_preds)
-        # break
+
     # print(f'val_loss: {total_loss/len(test_loader)}, val_acc: {accuracy_score(y_true, y_preds)}')  
     return total_loss/len(loader), accuracy_score(y_true, y_preds), balanced_accuracy_score(y_true, y_preds), y_preds
 

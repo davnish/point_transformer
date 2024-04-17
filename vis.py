@@ -11,7 +11,7 @@ from sklearn.metrics import classification_report
 np.random.seed(42)
 
 
-colors = np.random.rand(8,3)
+colors = np.random.randn(8,3)
 def visualize(data, label):
 
     pcd = o3d.geometry.PointCloud()
@@ -26,7 +26,7 @@ def visualize(data, label):
 import torch.nn as nn
 
 def visualize_model(model_name):
-    loader = DataLoader(Dales('cuda', 25, 4096, partition='test',not_norm=True), batch_size = 8)
+    loader = DataLoader(Dales('cuda', 25, 4096, partition='test'), batch_size = 8)
     tiles = np.load(os.path.join("data", "Dales" , 'test', f"not_norm_25_4096.npz"))
     data = tiles['x'].reshape(-1, 3)
     label = tiles['y'].reshape(-1)
@@ -44,14 +44,8 @@ def visualize_model(model_name):
 
     return pcd
 
+if __name__ == "__main__":
 
-pcd = visualize_model(11)
+    pcd = visualize_model(11)
 
-o3d.visualization.draw_geometries([pcd])
-
-
-
-
-
-
-
+    o3d.visualization.draw_geometries([pcd])

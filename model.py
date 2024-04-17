@@ -176,16 +176,6 @@ class PointTransformerSeg_fp(nn.Module):
         x = self.conv_fuse(x)
 
 
-        
-        # x = self.relu(self.bn3(self.conv3(x)))
-        # x = self.dp3(x)
-        # x = self.relu(self.bn4(self.conv4(x)))
-        # x = self.dp4(x)
-
-        # x = self.relu(self.bn5(self.conv5(x)))
-        # x = self.dp5(x)
-
-
         x = self.fp1(xyz2.transpose(1,2), xyz3.transpose(1,2), feature_1, x)
         x = self.fp2(xyz1.transpose(1,2), xyz2.transpose(1,2), feature_0, x)
 
@@ -204,7 +194,10 @@ if __name__ == '__main__':
 
     x = torch.rand((8,128,3))
     model = PointTransformerSeg_fp(n_embd=64)
-    x = model(x)
+    y = model(x)
+    print(y.size())
 
-    print(x.size())
+    model = PointTransformerSeg(n_embd=64, with_oa=False)
+    y = model(x)
+    print(y.size())
     pass

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 torch.manual_seed(42)
 
-class SA_Layer_OA(nn.Module):
+class OA_Layer(nn.Module):
     def __init__(self, channels):
         super().__init__()
         self.q_conv = nn.Conv1d(channels, channels // 4, 1, bias=False)
@@ -20,7 +20,7 @@ class SA_Layer_OA(nn.Module):
         x_v = self.v_conv(x)
         energy = x_q @ x_k # b, n, n 
         attention = self.softmax(energy)
-        attention = attention / (1e-9 + attention.sum(dim=1, keepdims=True))
+        attention = attention / (1e-9 + torch.sum(attention, dim=1, keepdims=True))
         x_r = x_v @ attention # b, c, n 
         x_r = self.act(self.after_norm(self.trans_conv(x - x_r)))
         x = x + x_r
@@ -59,7 +59,7 @@ class StackedAttention(nn.Module):
         self.bn2 = nn.BatchNorm1d(channels)
 
         if with_oa:
-            self.sa = nn.ModuleList([SA_Layer_OA(channels) for _ in range(4)])
+            self.sa = nn.ModuleList([OA_Layer(channels) for _ in range(4)])
         else:
             self.sa = nn.ModuleList([SA_Layer(channels) for _ in range(4)])
 
@@ -71,22 +71,27 @@ class StackedAttention(nn.Module):
         # conv2d 3 -> 128 channels 1, 1
         # b * npoint, c, nsample 
         # permute reshape
-        batch_size, _, N = x.size()
 
         x = self.relu(self.bn1(self.conv1(x))) # B, D, N
         x = self.relu(self.bn2(self.conv2(x)))
 
         x_concat = None
         for sa in self.sa:
+            x = sa(x)
             if x_concat is None:
-                x_concat = sa(x)
+                x_concat = x
             else:
-                x_concat = torch.concat([x_concat, sa(x)], dim = 1)
+                x_concat = torch.concat([x_concat, x], dim = 1)
         
         return x_concat
     
 if __name__ == "__main__":
-    x = torch.rand(1,64,2048)
+    x = torch.rand(2,64,128) # B, C, N
+
     model = StackedAttention(channels=64, with_oa=False)
-    x = model(x)
-    print(x.size())
+    y = model(x)
+    print(y.size())
+
+    model = StackedAttention(channels=64, with_oa = True)
+    y = model(x)
+    print(y.size())
