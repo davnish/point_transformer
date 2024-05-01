@@ -117,8 +117,8 @@ class PointTransformer(nn.Module):
         # self.bn4 = nn.BatchNorm1d(embd*4*2)
         # self.dp4 = nn.Dropout(p=0.2)
         
-        self.conv5 = nn.Conv1d(embd*4*2, embd*2, 1)
-        self.bn5 = nn.BatchNorm1d(embd*2)
+        self.conv5 = nn.Conv1d(embd*4*2, embd*4*2, 1)
+        self.bn5 = nn.BatchNorm1d(embd*4*2)
         # self.dp5 = nn.Dropout(p=0.2)
         
         # self.conv6 = nn.Conv1d(embd*4, embd*2, 1)
@@ -127,7 +127,7 @@ class PointTransformer(nn.Module):
         # self.conv7 = nn.Conv1d(embd*2, embd, 1)
         # self.bn7 = nn.BatchNorm1d(embd)
 
-        self.logits = nn.Conv1d(embd*2, output_channels, 1)
+        self.logits = nn.Conv1d(embd*4*2, output_channels, 1)
 
 
     def forward(self, x):
