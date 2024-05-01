@@ -7,7 +7,83 @@ import torch.nn.functional as F
 
 torch.manual_seed(42)
 
-class PointTransformerSeg(nn.Module):
+
+class NaivePointTransformer(nn.Module):
+    def __init__(self, n_embd = 64, with_oa = False):
+        super().__init__()
+        output_channels = 8
+        d_points = 3
+        self.conv1 = nn.Conv1d(d_points, n_embd, kernel_size=1, bias=False)
+        self.conv2 = nn.Conv1d(n_embd, n_embd, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm1d(n_embd)
+        self.bn2 = nn.BatchNorm1d(n_embd)
+        
+        self.StackedAttention = StackedAttention(channels = n_embd, with_oa = with_oa)
+        
+        self.conv5 = nn.Conv1d(n_embd*4*2, n_embd*2, 1)
+        self.bn5 = nn.BatchNorm1d(n_embd*2)
+        self.dp5 = nn.Dropout(p=0.2)
+        self.conv6 = nn.Conv1d(n_embd*2, n_embd*2, 1)
+        self.bn6 = nn.BatchNorm1d(n_embd*2)
+
+        self.logits = nn.Conv1d(n_embd*2, output_channels, 1)
+
+    def forward(self, x):
+        x = x.permute(0, 2, 1)
+        
+        x = F.relu(self.bn1(self.conv1(x))) # B, D, N
+        x = F.relu(self.bn2(self.conv2(x))) # B, D, N
+
+        x = self.StackedAttention(x)  
+        x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
+
+        x = torch.cat([x, x1], dim = 1)
+        x = F.relu(self.bn5(self.conv5(x)))
+        x = self.dp5(x)
+        x = F.relu(self.bn6(self.conv6(x)))
+        x = self.logits(x)
+        x = x.permute(0, 2, 1)
+        return x
+
+class SimplePointTransformer(nn.Module):
+    def __init__(self, n_embd = 64, with_oa = True):
+        super().__init__()
+        output_channels = 8
+        d_points = 3
+        self.conv1 = nn.Conv1d(d_points, n_embd, kernel_size=1, bias=False)
+        self.conv2 = nn.Conv1d(n_embd, n_embd, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm1d(n_embd)
+        self.bn2 = nn.BatchNorm1d(n_embd)
+        
+        self.StackedAttention = StackedAttention(channels = n_embd, with_oa = with_oa)
+        
+        self.conv5 = nn.Conv1d(n_embd*4*2, n_embd*2, 1)
+        self.bn5 = nn.BatchNorm1d(n_embd*2)
+        self.dp5 = nn.Dropout(p=0.2)
+        self.conv6 = nn.Conv1d(n_embd*2, n_embd*2, 1)
+        self.bn6 = nn.BatchNorm1d(n_embd*2)
+
+        self.logits = nn.Conv1d(n_embd*2, output_channels, 1)
+
+    def forward(self, x):
+        xyz = x[..., :3]
+        x = x.permute(0, 2, 1)
+        
+        x = F.relu(self.bn1(self.conv1(x))) # B, D, N
+        x = F.relu(self.bn2(self.conv2(x))) # B, D, N
+
+        x = self.StackedAttention(x)  
+        x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
+
+        x = torch.cat([x, x1], dim = 1)
+        x = F.relu(self.bn5(self.conv5(x)))
+        x = self.dp5(x)
+        x = F.relu(self.bn6(self.conv6(x)))
+        x = self.logits(x)
+        x = x.permute(0, 2, 1)
+        return x
+
+class PointTransformer(nn.Module):
     def __init__(self, n_embd = 64, with_oa = True):
         super().__init__()
         output_channels = 8
@@ -97,7 +173,7 @@ class PointTransformerSeg(nn.Module):
         x = x.permute(0, 2, 1)
         return x
     
-class PointTransformerSeg_fp(nn.Module):
+class PointTransformer_fp(nn.Module):
     def __init__(self, n_embd = 64, with_oa = True):
         super().__init__()
         output_channels = 8
@@ -193,11 +269,16 @@ class PointTransformerSeg_fp(nn.Module):
 if __name__ == '__main__':
 
     x = torch.rand((8,128,3))
-    model = PointTransformerSeg_fp(n_embd=64)
+
+    model = NaivePointTransformer(n_embd=64)
     y = model(x)
     print(y.size())
 
-    model = PointTransformerSeg(n_embd=64, with_oa=False)
+    model = SimplePointTransformer(n_embd=64)
+    y = model(x)
+    print(y.size())
+
+    model = PointTransformer(n_embd=64, with_oa=False)
     y = model(x)
     print(y.size())
     pass

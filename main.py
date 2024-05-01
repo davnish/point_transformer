@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
-from model import PointTransformerSeg
+from model import PointTransformer, NaivePointTransformer, SimplePointTransformer
 from dataset import Dales
 import time
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     batch_size = 8
     lr = 1e-4
     epoch = 100
-    eval_train_test = 10
+    eval = 10
     n_embd = 64
     step_size = 50 # Reduction of Learning at how many epochs
     batch_eval_inter = 100
@@ -89,6 +89,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type = int,default = batch_size)
     parser.add_argument('--points_taken', type = int, default = points_taken)
     parser.add_argument('--grid_size', type = int, default = grid_size)
+    parser.add_argument('--eval', type = int, default = 1)
+    parser.add_argument('--model', type = str, default = 'NPCT')
 
 
     args = parser.parse_args()
@@ -110,7 +112,8 @@ if __name__ == '__main__':
     # model = pct(n_embd, n_heads, n_layers)
     # model = pct(64)
     # model = mlp(3, 8)
-    model = PointTransformerSeg()
+    model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer}
+    model = model[args.model]()
 
     # loss, Optimizer, Scheduler
     loss_fn = nn.CrossEntropyLoss()
@@ -126,13 +129,10 @@ if __name__ == '__main__':
     for _epoch in range(1, args.epoch+1): 
         train_loss, train_acc, bal_avg_acc = train_loop(train_loader)
         scheduler.step()
-        if _epoch%eval_train_test==0:
+        if _epoch%args.eval==0:
             val_loss, val_acc, bal_val_acc, _ = test_loop(test_loader, loss_fn, model, device)
             print(f'Epoch {_epoch} | lr: {scheduler.get_last_lr()}:\n train_loss: {train_loss:.4f} | train_acc: {train_acc:.4f} | bal_train_acc: {bal_avg_acc:.4f}\n val_loss: {val_loss:.4f} | val_acc: {val_acc:.4f} | bal_val_acc: {bal_val_acc:.4f}')
         
-
-
-        # break
         
     end = time.time()
 
@@ -140,5 +140,5 @@ if __name__ == '__main__':
 
     if not os.path.exists(os.path.join("models", "best")):
         os.makedirs(os.path.join("models", "best"))
-    torch.save(model.state_dict(), os.path.join("models", "best", f"model_{args.model_name}.pt"))
+    torch.save(model.state_dict(), os.path.join("models", "best", f"{args.model}_{args.model_name}.pt"))
     print(f"Model Saved at {args.epoch} epochs, named: model_{args.model_name}")

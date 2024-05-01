@@ -1,1 +1,3 @@
-python main.py --epoch 500 --lr 0.0001 --step_size 100 --points_taken 4096 --batch_size 16 --grid_size 25 --model_name 13
+python main.py --epoch 1 --eval 1 --lr 0.0001 --step_size 100 --points_taken 4096 --batch_size 16 --grid_size 25 --model_name 1 --model NPCT
+python main.py --epoch 1 --eval 1 --lr 0.0001 --step_size 100 --points_taken 4096 --batch_size 16 --grid_size 25 --model_name 1 --model SPCT
+python main.py --epoch 1 --eval 1 --lr 0.0001 --step_size 100 --points_taken 4096 --batch_size 16 --grid_size 25 --model_name 1 --model PCT
