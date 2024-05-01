@@ -104,21 +104,21 @@ class PointTransformer(nn.Module):
 
         self.relu = nn.ReLU()
 
-        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4 + embd*4 + embd*2, embd*4*4, kernel_size=1, bias=False),
-                                   nn.BatchNorm1d(embd*4*4),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4, kernel_size=1, bias=False),
+                                   nn.BatchNorm1d(embd*4),
                                    nn.LeakyReLU(negative_slope=0.2))
 
 
-        self.conv3 = nn.Conv1d(embd*4*4*2, embd*4*2, 1)
-        self.bn3 = nn.BatchNorm1d(embd*4*2)
+        self.conv3 = nn.Conv1d(embd*4, embd*2, 1)
+        self.bn3 = nn.BatchNorm1d(embd*2)
         self.dp3 = nn.Dropout(p=0.2)        
         
         # self.conv4 = nn.Conv1d(embd*4*4, embd*4*2, 1)
         # self.bn4 = nn.BatchNorm1d(embd*4*2)
         # self.dp4 = nn.Dropout(p=0.2)
         
-        self.conv5 = nn.Conv1d(embd*4*2, embd*4*2, 1)
-        self.bn5 = nn.BatchNorm1d(embd*4*2)
+        self.conv5 = nn.Conv1d(embd*2, embd*2, 1)
+        self.bn5 = nn.BatchNorm1d(embd*2)
         # self.dp5 = nn.Dropout(p=0.2)
         
         # self.conv6 = nn.Conv1d(embd*4, embd*2, 1)
@@ -127,7 +127,7 @@ class PointTransformer(nn.Module):
         # self.conv7 = nn.Conv1d(embd*2, embd, 1)
         # self.bn7 = nn.BatchNorm1d(embd)
 
-        self.logits = nn.Conv1d(embd*4*2, output_channels, 1)
+        self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
 
     def forward(self, x):
@@ -147,20 +147,20 @@ class PointTransformer(nn.Module):
 
         x = self.pt_last(feature_1)
         
-        x = torch.concat([x, feature_1, feature_0], dim=1)
+        x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
+
+        # x = torch.concat([x, feature_1, feature_0], dim=1)
+
+        x = torch.cat([x, x1], dim = 1)
 
         x = self.conv_fuse(x)
         
-        x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
-
-        x = torch.cat([x, x1], dim = 1)
-        
-        x = self.relu(self.bn3(self.conv3(x)))
+        x = self.relu(self.bn3(self.conv3(x + feature_1)))
         x = self.dp3(x)
         # x = self.relu(self.bn4(self.conv4(x)))
         # x = self.dp4(x)
 
-        x = self.relu(self.bn5(self.conv5(x)))
+        x = self.relu(self.bn5(self.conv5(x + feature_0)))
         # x = self.dp5(x)
 
         # x = self.relu(self.bn6(self.conv6(x + feature_1)))
