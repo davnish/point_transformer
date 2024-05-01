@@ -90,6 +90,7 @@ if __name__ == '__main__':
     parser.add_argument('--points_taken', type = int, default = points_taken)
     parser.add_argument('--grid_size', type = int, default = grid_size)
     parser.add_argument('--eval', type = int, default = 1)
+    parser.add_argument('--embd', type = int, default = 64)
     parser.add_argument('--model', type = str, default = 'NPCT')
 
 
@@ -109,11 +110,9 @@ if __name__ == '__main__':
     test_loader = DataLoader(test_dataset, batch_size = args.batch_size, shuffle = False, drop_last=True)
 
     # Initialize the model
-    # model = pct(n_embd, n_heads, n_layers)
-    # model = pct(64)
-    # model = mlp(3, 8)
+
     model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer}
-    model = model[args.model]()
+    model = model[args.model](args.embd)
 
     # loss, Optimizer, Scheduler
     loss_fn = nn.CrossEntropyLoss()
