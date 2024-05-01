@@ -73,7 +73,7 @@ if __name__ == '__main__':
     lr = 1e-4
     epoch = 100
     eval = 10
-    n_embd = 64
+    embd = 64
     step_size = 50 # Reduction of Learning at how many epochs
     batch_eval_inter = 100
     dropout = 0.3
@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
 
     print("Running Epochs")
-    print(f'{device = }, {args.grid_size = }, {args.points_taken = }, {args.epoch = }, {n_embd = }, {args.batch_size = }, {args.lr = }')
+    print(f'{device = }, {args.grid_size = }, {args.points_taken = }, {args.epoch = }, {args.embd = }, {args.batch_size = }, {args.lr = }')
     start = time.time()
     for _epoch in range(1, args.epoch+1): 
         train_loss, train_acc, bal_avg_acc = train_loop(train_loader)

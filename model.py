@@ -9,24 +9,24 @@ torch.manual_seed(42)
 
 
 class NaivePointTransformer(nn.Module):
-    def __init__(self, n_embd = 64, with_oa = False):
+    def __init__(self, embd = 64, with_oa = False):
         super().__init__()
         output_channels = 8
         d_points = 3
-        self.conv1 = nn.Conv1d(d_points, n_embd, kernel_size=1, bias=False)
-        self.conv2 = nn.Conv1d(n_embd, n_embd, kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm1d(n_embd)
-        self.bn2 = nn.BatchNorm1d(n_embd)
+        self.conv1 = nn.Conv1d(d_points, embd, kernel_size=1, bias=False)
+        self.conv2 = nn.Conv1d(embd, embd, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm1d(embd)
+        self.bn2 = nn.BatchNorm1d(embd)
         
-        self.StackedAttention = StackedAttention(channels = n_embd, with_oa = with_oa)
+        self.StackedAttention = StackedAttention(channels = embd, with_oa = with_oa)
         
-        self.conv5 = nn.Conv1d(n_embd*4*2, n_embd*2, 1)
-        self.bn5 = nn.BatchNorm1d(n_embd*2)
+        self.conv5 = nn.Conv1d(embd*4*2, embd*2, 1)
+        self.bn5 = nn.BatchNorm1d(embd*2)
         self.dp5 = nn.Dropout(p=0.2)
-        self.conv6 = nn.Conv1d(n_embd*2, n_embd*2, 1)
-        self.bn6 = nn.BatchNorm1d(n_embd*2)
+        self.conv6 = nn.Conv1d(embd*2, embd*2, 1)
+        self.bn6 = nn.BatchNorm1d(embd*2)
 
-        self.logits = nn.Conv1d(n_embd*2, output_channels, 1)
+        self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
     def forward(self, x):
         x = x.permute(0, 2, 1)
@@ -46,27 +46,26 @@ class NaivePointTransformer(nn.Module):
         return x
 
 class SimplePointTransformer(nn.Module):
-    def __init__(self, n_embd = 64, with_oa = True):
+    def __init__(self, embd = 64, with_oa = True):
         super().__init__()
         output_channels = 8
         d_points = 3
-        self.conv1 = nn.Conv1d(d_points, n_embd, kernel_size=1, bias=False)
-        self.conv2 = nn.Conv1d(n_embd, n_embd, kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm1d(n_embd)
-        self.bn2 = nn.BatchNorm1d(n_embd)
+        self.conv1 = nn.Conv1d(d_points, embd, kernel_size=1, bias=False)
+        self.conv2 = nn.Conv1d(embd, embd, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm1d(embd)
+        self.bn2 = nn.BatchNorm1d(embd)
         
-        self.StackedAttention = StackedAttention(channels = n_embd, with_oa = with_oa)
+        self.StackedAttention = StackedAttention(channels = embd, with_oa = with_oa)
         
-        self.conv5 = nn.Conv1d(n_embd*4*2, n_embd*2, 1)
-        self.bn5 = nn.BatchNorm1d(n_embd*2)
+        self.conv5 = nn.Conv1d(embd*4*2, embd*2, 1)
+        self.bn5 = nn.BatchNorm1d(embd*2)
         self.dp5 = nn.Dropout(p=0.2)
-        self.conv6 = nn.Conv1d(n_embd*2, n_embd*2, 1)
-        self.bn6 = nn.BatchNorm1d(n_embd*2)
+        self.conv6 = nn.Conv1d(embd*2, embd*2, 1)
+        self.bn6 = nn.BatchNorm1d(embd*2)
 
-        self.logits = nn.Conv1d(n_embd*2, output_channels, 1)
+        self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
     def forward(self, x):
-        xyz = x[..., :3]
         x = x.permute(0, 2, 1)
         
         x = F.relu(self.bn1(self.conv1(x))) # B, D, N
@@ -84,51 +83,51 @@ class SimplePointTransformer(nn.Module):
         return x
 
 class PointTransformer(nn.Module):
-    def __init__(self, n_embd = 64, with_oa = True):
+    def __init__(self, embd = 64, with_oa = True):
         super().__init__()
         output_channels = 8
         d_points = 3
-        self.conv1 = nn.Conv1d(d_points, n_embd, kernel_size=1, bias=False)
-        self.conv2 = nn.Conv1d(n_embd, n_embd, kernel_size=1, bias=False)
+        self.conv1 = nn.Conv1d(d_points, embd, kernel_size=1, bias=False)
+        self.conv2 = nn.Conv1d(embd, embd, kernel_size=1, bias=False)
 
-        self.bn1 = nn.BatchNorm1d(n_embd)
-        self.bn2 = nn.BatchNorm1d(n_embd)
+        self.bn1 = nn.BatchNorm1d(embd)
+        self.bn2 = nn.BatchNorm1d(embd)
 
         self.dp1 = nn.Dropout(p=0.2)
         self.dp2 = nn.Dropout(p=0.2)
         
-        self.gather_local_0 = Local_op(in_channels = n_embd*2, out_channels = n_embd*2)
-        self.gather_local_1 = Local_op(in_channels = n_embd*4, out_channels = n_embd*4)
+        self.gather_local_0 = Local_op(in_channels = embd*2, out_channels = embd*2)
+        self.gather_local_1 = Local_op(in_channels = embd*4, out_channels = embd*4)
        
-        self.pt_last = StackedAttention(channels = n_embd*4, with_oa = with_oa)
+        self.pt_last = StackedAttention(channels = embd*4, with_oa = with_oa)
         self.dp_pt = nn.Dropout(p=0.2)
 
         self.relu = nn.ReLU()
 
-        self.conv_fuse = nn.Sequential(nn.Conv1d(n_embd*4*4 + n_embd*4 + n_embd*2, n_embd*4*4, kernel_size=1, bias=False),
-                                   nn.BatchNorm1d(n_embd*4*4),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4 + embd*4 + embd*2, embd*4*4, kernel_size=1, bias=False),
+                                   nn.BatchNorm1d(embd*4*4),
                                    nn.LeakyReLU(negative_slope=0.2))
 
 
-        self.conv3 = nn.Conv1d(n_embd*4*4*2, n_embd*4*4, 1)
-        self.bn3 = nn.BatchNorm1d(n_embd*4*4)
+        self.conv3 = nn.Conv1d(embd*4*4*2, embd*4*4, 1)
+        self.bn3 = nn.BatchNorm1d(embd*4*4)
         self.dp3 = nn.Dropout(p=0.2)        
         
-        self.conv4 = nn.Conv1d(n_embd*4*4, n_embd*4*2, 1)
-        self.bn4 = nn.BatchNorm1d(n_embd*4*2)
+        self.conv4 = nn.Conv1d(embd*4*4, embd*4*2, 1)
+        self.bn4 = nn.BatchNorm1d(embd*4*2)
         self.dp4 = nn.Dropout(p=0.2)
         
-        self.conv5 = nn.Conv1d(n_embd*4*2, n_embd*4, 1)
-        self.bn5 = nn.BatchNorm1d(n_embd*4)
+        self.conv5 = nn.Conv1d(embd*4*2, embd*4, 1)
+        self.bn5 = nn.BatchNorm1d(embd*4)
         self.dp5 = nn.Dropout(p=0.2)
         
-        self.conv6 = nn.Conv1d(n_embd*4, n_embd*2, 1)
-        self.bn6 = nn.BatchNorm1d(n_embd*2)
+        self.conv6 = nn.Conv1d(embd*4, embd*2, 1)
+        self.bn6 = nn.BatchNorm1d(embd*2)
         
-        self.conv7 = nn.Conv1d(n_embd*2, n_embd, 1)
-        self.bn7 = nn.BatchNorm1d(n_embd)
+        self.conv7 = nn.Conv1d(embd*2, embd, 1)
+        self.bn7 = nn.BatchNorm1d(embd)
 
-        self.logits = nn.Conv1d(n_embd, output_channels, 1)
+        self.logits = nn.Conv1d(embd, output_channels, 1)
 
 
     def forward(self, x):
@@ -270,15 +269,15 @@ if __name__ == '__main__':
 
     x = torch.rand((8,128,3))
 
-    model = NaivePointTransformer(n_embd=64)
+    model = NaivePointTransformer(embd=64)
     y = model(x)
     print(y.size())
 
-    model = SimplePointTransformer(n_embd=64)
+    model = SimplePointTransformer(embd=64)
     y = model(x)
     print(y.size())
 
-    model = PointTransformer(n_embd=64, with_oa=False)
+    model = PointTransformer(embd=64, with_oa=False)
     y = model(x)
     print(y.size())
     pass
