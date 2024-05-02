@@ -126,7 +126,7 @@ def sample_and_group(npoint, nsample, xyz, points):
 
     grouped_points = index_points(points, idx)
     grouped_points_norm = grouped_points - new_points.view(B, S, 1, -1)
-    # print(grouped_points.size())
+    
     new_points = torch.cat([grouped_points_norm, new_points.view(B, S, 1, -1).repeat(1, 1, nsample, 1)], dim=-1)
     return new_xyz, new_points
 
