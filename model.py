@@ -242,18 +242,18 @@ class PointTransformer_FP(nn.Module):
 
         self.relu = nn.ReLU()
 
-        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4, kernel_size=1, bias=False),
-                                   nn.BatchNorm1d(embd*4*4),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1, bias=False),
+                                   nn.BatchNorm1d(embd*4*4*2),
                                    nn.LeakyReLU(negative_slope=0.2))
 
 
-        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd*2), mlp=[embd*4*2])
-        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*4])
+        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*4])
+        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd), mlp=[embd*4*2])
 
         # self.linear = nn.Conv1d(embd*4, embd*2, kernel_size=1)
         # self.bn = nn.BatchNorm1d(embd*2)
 
-        self.logits = nn.Conv1d(embd*4, output_channels, 1)
+        self.logits = nn.Conv1d(embd*4*2, output_channels, 1)
 
 
     def forward(self, x):
@@ -269,7 +269,7 @@ class PointTransformer_FP(nn.Module):
         xyz2, new_feature = sample_and_group(npoint=N//4, nsample=32, xyz=xyz1, points=x.permute(0, 2, 1))         
         feature_1 = self.gather_local_1(new_feature)
 
-        xyz3, new_feature = sample_and_group(npoint=N//16, nsample=32, xyz=xyz2, points=feature_1.permute(0, 2, 1)) 
+        xyz3, new_feature = sample_and_group(npoint=N//8, nsample=32, xyz=xyz2, points=feature_1.permute(0, 2, 1)) 
         feature_2 = self.gather_local_2(new_feature) # B, C, N
 
         x = self.pt_last(feature_2)
