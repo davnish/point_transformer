@@ -251,7 +251,7 @@ class PointTransformer_FP(nn.Module):
         self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*4])
 
         self.linear = nn.Conv1d(embd*4, embd*2, kernel_size=1)
-        self.bn = nn.BatchNorm1d(embd*4)
+        self.bn = nn.BatchNorm1d(embd*2)
 
         self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
