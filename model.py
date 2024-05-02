@@ -198,7 +198,7 @@ class PointTransformer_FP(nn.Module):
         xyz2, new_feature = sample_and_group(npoint=N//4, nsample=32, xyz=xyz1, points=x.permute(0, 2, 1))         
         feature_1 = self.gather_local_1(new_feature)
 
-        xyz3, new_feature = sample_and_group(npoint=N//8, nsample=32, xyz=xyz2, points=feature_1.permute(0, 2, 1)) 
+        xyz3, new_feature = sample_and_group(npoint=N//16, nsample=32, xyz=xyz2, points=feature_1.permute(0, 2, 1)) 
         feature_2 = self.gather_local_2(new_feature) # B, C, N
 
         x = self.pt_last(feature_2)
