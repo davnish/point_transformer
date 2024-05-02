@@ -242,18 +242,18 @@ class PointTransformer_FP(nn.Module):
 
         self.relu = nn.ReLU()
 
-        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1, bias=False),
-                                   nn.BatchNorm1d(embd*4*4*2),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4, kernel_size=1, bias=False),
+                                   nn.BatchNorm1d(embd*4*4),
                                    nn.LeakyReLU(negative_slope=0.2))
 
 
-        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*4])
-        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd), mlp=[embd*4*2])
+        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd*2), mlp=[embd*4*2])
+        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*4])
 
-        self.linear = nn.Conv1d(embd*4*2, embd*4, kernel_size=1)
+        self.linear = nn.Conv1d(embd*4, embd*2, kernel_size=1)
         self.bn = nn.BatchNorm1d(embd*4)
 
-        self.logits = nn.Conv1d(embd*4, output_channels, 1)
+        self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
 
     def forward(self, x):
