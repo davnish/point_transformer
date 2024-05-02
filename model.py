@@ -179,8 +179,8 @@ class PointTransformer_FP(nn.Module):
                                    nn.LeakyReLU(negative_slope=0.2))
 
 
-        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*2])
-        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*2])
+        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*2])
+        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*2])
 
         self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
@@ -195,10 +195,10 @@ class PointTransformer_FP(nn.Module):
 
         feature_0 = x
 
-        xyz2, new_feature = sample_and_group(npoint=N//2, nsample=32, xyz=xyz1, points=x.permute(0, 2, 1))         
+        xyz2, new_feature = sample_and_group(npoint=N//4, nsample=32, xyz=xyz1, points=x.permute(0, 2, 1))         
         feature_1 = self.gather_local_1(new_feature)
 
-        xyz3, new_feature = sample_and_group(npoint=N//4, nsample=32, xyz=xyz2, points=feature_1.permute(0, 2, 1)) 
+        xyz3, new_feature = sample_and_group(npoint=N//8, nsample=32, xyz=xyz2, points=feature_1.permute(0, 2, 1)) 
         feature_2 = self.gather_local_2(new_feature) # B, C, N
 
         x = self.pt_last(feature_2)
@@ -209,8 +209,8 @@ class PointTransformer_FP(nn.Module):
  
         x = self.conv_fuse(x)
 
-        x = self.fp1(xyz2.transpose(1,2), xyz3.transpose(1,2), feature_1, x)
-        x = self.fp2(xyz1.transpose(1,2), xyz2.transpose(1,2), feature_0, x)
+        x = self.fp2(xyz2.transpose(1,2), xyz3.transpose(1,2), feature_1, x)
+        x = self.fp1(xyz1.transpose(1,2), xyz2.transpose(1,2), feature_0, x)
 
         x = self.logits(x)
         
