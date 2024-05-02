@@ -238,17 +238,17 @@ class PointTransformer_FPMOD(nn.Module):
         # self.dp_pt = nn.Dropout(p=0.2)
         self.relu = nn.ReLU()
 
-        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2*2, embd*4*4*2, kernel_size=1, bias=False),
-                                   nn.BatchNorm1d(embd*4*4*2),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2*2, embd*4*4, kernel_size=1, bias=False),
+                                   nn.BatchNorm1d(embd*4*4),
                                    nn.LeakyReLU(negative_slope=0.2))
 
 
         # self.fp4 = PointNetFeaturePropagation(in_channel=(embd*4*4*4 + embd*4*2), mlp=[embd*4*4*2])
-        self.fp3 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*4), mlp=[embd*4*4])
-        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd*2), mlp=[embd*4*2])
-        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*4])
+        self.fp3 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd*4), mlp=[embd*4*2])
+        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd*2), mlp=[embd*4])
+        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4 + embd), mlp=[embd*2])
 
-        self.logits = nn.Conv1d(embd*4, output_channels, 1)
+        self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
 
     def forward(self, x):
@@ -380,7 +380,7 @@ if __name__ == '__main__':
     model = PointTransformer_FPMOD(embd=64)
     y = model(x)
     print(y.size())
-    
+
     model = PointTransformer_FPADV(embd=64)
     y = model(x)
     print(y.size())

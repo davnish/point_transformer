@@ -6,7 +6,7 @@ import torch
 from model import PointTransformerSeg
 from dataset import Dales
 from torch.utils.data import DataLoader
-from main import test_loop
+from train import test_loop
 from sklearn.metrics import classification_report
 np.random.seed(42)
 
