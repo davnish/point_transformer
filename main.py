@@ -35,7 +35,7 @@ def train_loop(loader, see_batch_loss = False):
         y_preds.extend(preds.detach().cpu().tolist())
         
         if see_batch_loss:
-            if batch%batch_eval_inter == 0:
+            if batch%100 == 0:
                 print(f'Batch_Loss_{batch} : {loss.item()}')
 
     return total_loss/len(loader), accuracy_score(y_true, y_preds), balanced_accuracy_score(y_true, y_preds)
@@ -65,34 +65,17 @@ def test_loop(loader, loss_fn, model, device):
 
 if __name__ == '__main__':
 
-    # Hyperparameter----
-
-    grid_size = 25 # The size of the grid from 500mx500m 
-    points_taken = 4096 # Points taken per each grid 
-    batch_size = 8
-    lr = 1e-4
-    epoch = 100
-    eval = 10
-    embd = 64
-    step_size = 50 # Reduction of Learning at how many epochs
-    batch_eval_inter = 100
-    dropout = 0.3
-    # eval_test = 10
-
-    # ------------------
-
     parser = argparse.ArgumentParser()
-    parser.add_argument('--lr', type = float, default= lr)
-    parser.add_argument('--epoch', type = int, default = epoch)
-    parser.add_argument('--step_size', type = int, default = step_size)
+    parser.add_argument('--lr', type = float, default = 1e-4)
+    parser.add_argument('--epoch', type = int, default = 10)
+    parser.add_argument('--step_size', type = int, default = 100)
     parser.add_argument('--model_name', default = '42')
-    parser.add_argument('--batch_size', type = int,default = batch_size)
-    parser.add_argument('--points_taken', type = int, default = points_taken)
-    parser.add_argument('--grid_size', type = int, default = grid_size)
+    parser.add_argument('--batch_size', type = int, default = 8)
+    parser.add_argument('--grid_size', type = int, default = 25)
+    parser.add_argument('--points_taken', type = int, default = 4096)
     parser.add_argument('--eval', type = int, default = 1)
     parser.add_argument('--embd', type = int, default = 64)
-    parser.add_argument('--model', type = str, default = 'NPCT')
-
+    parser.add_argument('--model', type = str, default = 'PCT')
 
     args = parser.parse_args()
 
@@ -102,7 +85,7 @@ if __name__ == '__main__':
 
     # Splitting the data
     _dales = Dales(device, args.grid_size, args.points_taken, partition='train')
-    print("File Read Complete")
+    print("Dataset Read Complete")
     train_dataset, test_dataset = random_split(_dales, [0.7, 0.3])
 
     # Loading the data
@@ -110,7 +93,6 @@ if __name__ == '__main__':
     test_loader = DataLoader(test_dataset, batch_size = args.batch_size, shuffle = False, drop_last=True)
 
     # Initialize the model
-
     model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer, 'PCT_FP': PointTransformer_FP}
     model = model[args.model](args.embd)
 
@@ -119,8 +101,6 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(model.parameters(), lr = args.lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = args.step_size, gamma = 0.9)
     model = model.to(device)
-
-
 
     print("Running Epochs")
     print(f'{device = }, {args.grid_size = }, {args.points_taken = }, {args.epoch = }, {args.embd = }, {args.batch_size = }, {args.lr = }')
@@ -131,7 +111,6 @@ if __name__ == '__main__':
         if _epoch%args.eval==0:
             val_loss, val_acc, bal_val_acc, _ = test_loop(test_loader, loss_fn, model, device)
             print(f'Epoch {_epoch} | lr: {scheduler.get_last_lr()}:\n train_loss: {train_loss:.4f} | train_acc: {train_acc:.4f} | bal_train_acc: {bal_avg_acc:.4f}\n val_loss: {val_loss:.4f} | val_acc: {val_acc:.4f} | bal_val_acc: {bal_val_acc:.4f}')
-        
         
     end = time.time()
 
