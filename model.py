@@ -182,6 +182,9 @@ class PointTransformer_FP(nn.Module):
         self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*2])
         self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*2])
 
+        self.linear = nn.Conv1d(embd*2, embd*2, kernel_size=1)
+        self.bn = nn.BatchNorm1d(embd*2)
+
         self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
 
@@ -190,8 +193,8 @@ class PointTransformer_FP(nn.Module):
         xyz1 = x
         x = x.permute(0, 2, 1)
         
-        x = self.relu(self.bn1(self.conv1(x))) # B, D, N
-        x = self.relu(self.bn2(self.conv2(x))) # B, D, N
+        x = F.relu(self.bn1(self.conv1(x))) # B, D, N
+        x = F.relu(self.bn2(self.conv2(x))) # B, D, N
 
         feature_0 = x
 
@@ -212,6 +215,8 @@ class PointTransformer_FP(nn.Module):
         x = self.fp2(xyz2.transpose(1,2), xyz3.transpose(1,2), feature_1, x)
         x = self.fp1(xyz1.transpose(1,2), xyz2.transpose(1,2), feature_0, x)
 
+        x = F.relu(self.bn(self.linear(x)))
+
         x = self.logits(x)
         
         x = x.permute(0, 2, 1)
@@ -227,15 +232,13 @@ class PointTransformer_FPMOD(nn.Module):
         self.conv2 = nn.Conv1d(embd, embd, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm1d(embd)
         self.bn2 = nn.BatchNorm1d(embd)
-        # self.dp1 = nn.Dropout(p=0.2)
-        # self.dp2 = nn.Dropout(p=0.2)
         
         self.gather_local_1 = Local_op(in_channels = embd*2, out_channels = embd*2)
         self.gather_local_2 = Local_op(in_channels = embd*4, out_channels = embd*4)
         self.gather_local_3 = Local_op(in_channels = embd*4*2, out_channels = embd*4*2)
        
         self.pt_last = StackedAttention(channels = embd*4*2, with_oa = with_oa)
-        # self.dp_pt = nn.Dropout(p=0.2)
+
         self.relu = nn.ReLU()
 
         self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2*2, embd*4*4, kernel_size=1, bias=False),
@@ -247,6 +250,8 @@ class PointTransformer_FPMOD(nn.Module):
         self.fp3 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd*4), mlp=[embd*4*2])
         self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd*2), mlp=[embd*4])
         self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4 + embd), mlp=[embd*2])
+
+
 
         self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
