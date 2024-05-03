@@ -100,7 +100,7 @@ if __name__ == '__main__':
     # loss, Optimizer, Scheduler
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr = args.lr)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = args.step_size, gamma = 0.9)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = args.step_size, gamma = 0.6)
     model = model.to(device)
 
     print("Running Epochs")

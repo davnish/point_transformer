@@ -247,8 +247,8 @@ class PointTransformer_FP(nn.Module):
                                    nn.LeakyReLU(negative_slope=0.2))
 
 
-        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*4])
-        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd), mlp=[embd*4*2])
+        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*4*2, embd*4*4])
+        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd), mlp=[embd*4*4, embd*4*2])
 
         # self.linear = nn.Conv1d(embd*4, embd*2, kernel_size=1)
         # self.bn = nn.BatchNorm1d(embd*2)
