@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
-from model import PointTransformer, NaivePointTransformer, SimplePointTransformer, PointTransformer_FP, PointTransformer_FPADV, PointTransformer_FPMOD
+from model import PointTransformer, NaivePointTransformer, SimplePointTransformer, PointTransformer_FP
 from dataset import Dales
 import time
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     # Initialize the model
     model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer, 
-             'PCT_FP': PointTransformer_FP, 'PCT_FPADV': PointTransformer_FPADV, 'PCT_FPMOD': PointTransformer_FPMOD}
+             'PCT_FP': PointTransformer_FP}
     model = model[args.model](args.embd)
 
     # loss, Optimizer, Scheduler

@@ -1,5 +1,5 @@
 model_name=1
-epoch=2
+epoch=30
 eval=1
 embd=64
 
