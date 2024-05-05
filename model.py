@@ -154,73 +154,73 @@ class PointTransformer(nn.Module):
         x = x.permute(0, 2, 1)
         return x
     
-# class PointTransformer_FP(nn.Module):
-#     def __init__(self, embd = 64, with_oa = True):
-#         super().__init__()
-#         output_channels = 8
-#         d_points = 3
-#         self.conv1 = nn.Conv1d(d_points, embd, kernel_size=1, bias=False)
-#         self.conv2 = nn.Conv1d(embd, embd, kernel_size=1, bias=False)
-#         self.bn1 = nn.BatchNorm1d(embd)
-#         self.bn2 = nn.BatchNorm1d(embd)
-#         self.dp1 = nn.Dropout(p=0.2)
-#         self.dp2 = nn.Dropout(p=0.2)
+class PointTransformer_FPMOD(nn.Module):
+    def __init__(self, embd = 64, with_oa = True):
+        super().__init__()
+        output_channels = 8
+        d_points = 3
+        self.conv1 = nn.Conv1d(d_points, embd, kernel_size=1, bias=False)
+        self.conv2 = nn.Conv1d(embd, embd, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm1d(embd)
+        self.bn2 = nn.BatchNorm1d(embd)
+        # self.dp1 = nn.Dropout(p=0.2)
+        # self.dp2 = nn.Dropout(p=0.2)
         
-#         self.gather_local_1 = Local_op(in_channels = embd*2, out_channels = embd*2)
-#         self.gather_local_2 = Local_op(in_channels = embd*4, out_channels = embd*4)
+        self.gather_local_1 = Local_op(in_channels = embd*2, out_channels = embd*2)
+        self.gather_local_2 = Local_op(in_channels = embd*4, out_channels = embd*4)
        
-#         self.pt_last = StackedAttention(channels = embd*4, with_oa = with_oa)
-#         self.dp_pt = nn.Dropout(p=0.2)
+        self.pt_last = StackedAttention(channels = embd*4, with_oa = with_oa)
+        # self.dp_pt = nn.Dropout(p=0.2)
 
-#         self.relu = nn.ReLU()
+        self.relu = nn.ReLU()
 
-#         self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1, bias=False),
-#                                    nn.BatchNorm1d(embd*4*4*2),
-#                                    nn.LeakyReLU(negative_slope=0.2))
-
-
-#         self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*2])
-#         self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*2])
-
-#         self.linear = nn.Conv1d(embd*2, embd*2, kernel_size=1)
-#         self.bn = nn.BatchNorm1d(embd*2)
-
-#         self.logits = nn.Conv1d(embd*2, output_channels, 1)
+        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1, bias=False),
+                                   nn.BatchNorm1d(embd*4*4*2),
+                                   nn.ReLU())
 
 
-#     def forward(self, x):
-#         N = x.size(1)
-#         xyz1 = x
-#         x = x.permute(0, 2, 1)
+        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*4])
+        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd), mlp=[embd*4*2])
+
+        # self.linear = nn.Conv1d(embd*4, embd*2, kernel_size=1)
+        # self.bn = nn.BatchNorm1d(embd*2)
+
+        self.logits = nn.Conv1d(embd*4*2, output_channels, 1)
+
+
+    def forward(self, x):
+        N = x.size(1)
+        xyz1 = x
+        x = x.permute(0, 2, 1)
         
-#         x = F.relu(self.bn1(self.conv1(x))) # B, D, N
-#         x = F.relu(self.bn2(self.conv2(x))) # B, D, N
+        x = F.relu(self.bn1(self.conv1(x))) # B, D, N
+        x = F.relu(self.bn2(self.conv2(x))) # B, D, N
 
-#         feature_0 = x
+        feature_0 = x
 
-#         xyz2, new_feature = sample_and_group(npoint=N//4, nsample=32, xyz=xyz1, points=x.permute(0, 2, 1))         
-#         feature_1 = self.gather_local_1(new_feature)
+        xyz2, new_feature = sample_and_group(npoint=N//4, nsample=32, xyz=xyz1, points=x.permute(0, 2, 1))         
+        feature_1 = self.gather_local_1(new_feature)
 
-#         xyz3, new_feature = sample_and_group(npoint=N//16, nsample=32, xyz=xyz2, points=feature_1.permute(0, 2, 1)) 
-#         feature_2 = self.gather_local_2(new_feature) # B, C, N
+        xyz3, new_feature = sample_and_group(npoint=N//16, nsample=32, xyz=xyz2, points=feature_1.permute(0, 2, 1)) 
+        feature_2 = self.gather_local_2(new_feature) # B, C, N
 
-#         x = self.pt_last(feature_2)
+        x = self.pt_last(feature_2)
         
-#         x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
+        x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
 
-#         x = torch.cat([x, x1], dim = 1)
+        x = torch.cat([x, x1], dim = 1)
  
-#         x = self.conv_fuse(x)
+        x = self.conv_fuse(x)
 
-#         x = self.fp2(xyz2.transpose(1,2), xyz3.transpose(1,2), feature_1, x)
-#         x = self.fp1(xyz1.transpose(1,2), xyz2.transpose(1,2), feature_0, x)
+        x = self.fp2(xyz2.transpose(1,2), xyz3.transpose(1,2), feature_1, x)
+        x = self.fp1(xyz1.transpose(1,2), xyz2.transpose(1,2), feature_0, x)
 
-#         x = F.relu(self.bn(self.linear(x)))
+        # x = F.relu(self.bn(self.linear(x)))
 
-#         x = self.logits(x)
+        x = self.logits(x)
         
-#         x = x.permute(0, 2, 1)
-#         return x
+        x = x.permute(0, 2, 1)
+        return x
     
 class PointTransformer_FP(nn.Module):
     def __init__(self, embd = 64, with_oa = True):
@@ -244,11 +244,11 @@ class PointTransformer_FP(nn.Module):
 
         self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1, bias=False),
                                    nn.BatchNorm1d(embd*4*4*2),
-                                   nn.LeakyReLU(negative_slope=0.2))
+                                   nn.ReLU())
 
 
-        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*4*2, embd*4*4])
-        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd), mlp=[embd*4*4, embd*4*2])
+        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*4])
+        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd), mlp=[embd*4*2])
 
         # self.linear = nn.Conv1d(embd*4, embd*2, kernel_size=1)
         # self.bn = nn.BatchNorm1d(embd*2)
