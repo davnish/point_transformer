@@ -9,8 +9,6 @@ class Local_op(nn.Module):
         self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm1d(out_channels)
         self.bn2 = nn.BatchNorm1d(out_channels)
-
-
         self.relu = nn.ReLU()
 
     def forward(self, x):
@@ -154,7 +152,6 @@ def fps_numpy(points, num_points):
     pnts_left = np.delete(pnts_left, selected)
     # dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
 
-
     for i in range(1, num_points):
         
 
@@ -173,7 +170,7 @@ def fps_numpy(points, num_points):
     return sampled_pnts
 
 class PointNetFeaturePropagation(nn.Module):
-    def __init__(self, in_channel, mlp, drp_add = True):
+    def __init__(self, in_channel, mlp, drp_add = False):
         super(PointNetFeaturePropagation, self).__init__()
 
         self.mlp_convs = nn.ModuleList()
