@@ -184,7 +184,7 @@ class PointNetFeaturePropagation(nn.Module):
 
             self.mlp_bns.append(nn.BatchNorm1d(out_channel))
             if self.drp_add:
-                self.mlp_drp.append(nn.Dropout(p=0.5))
+                self.mlp_drp.append(nn.Dropout(p=0.2))
             last_channel = out_channel
         self.relu = nn.ReLU()
         
