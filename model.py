@@ -221,8 +221,12 @@ class PointTransformer_FPADV(nn.Module):
         self.conv1 = nn.Conv1d(d_points, embd//4, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm1d(embd//4)
 
+
         self.pt_first = StackedAttention(channels=embd//4, with_oa=with_oa)
 
+        self.conv2 = nn.Conv1d(embd, embd, kernel_size=1, bias=False)
+        self.bn2 = nn.BatchNorm1d(embd)
+        
         self.gather_local_1 = Local_op(in_channels = embd*2, out_channels = embd*2)
         self.gather_local_2 = Local_op(in_channels = embd*4, out_channels = embd*4)
        
