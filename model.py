@@ -160,9 +160,7 @@ class PointTransformer_FP(nn.Module):
         output_channels = 8
         d_points = 3
         self.conv1 = nn.Conv1d(d_points, embd, kernel_size=1, bias=False)
-        self.conv2 = nn.Conv1d(embd, embd, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm1d(embd)
-        self.bn2 = nn.BatchNorm1d(embd)
         
         self.gather_local_1 = Local_op(in_channels = embd*2, out_channels = embd*2)
         self.gather_local_2 = Local_op(in_channels = embd*4, out_channels = embd*4)
@@ -187,10 +185,10 @@ class PointTransformer_FP(nn.Module):
         
         feature_0 = F.relu(self.bn1(self.conv1(x))) # B, D, N
 
-        xyz1, new_feature = sample_and_group(npoint=N//16, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
+        xyz1, new_feature = sample_and_group(npoint=N//4, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
         feature_1 = self.gather_local_1(new_feature)
 
-        xyz2, new_feature = sample_and_group(npoint=N//256, nsample=16, xyz=xyz1, points=feature_1.permute(0, 2, 1)) 
+        xyz2, new_feature = sample_and_group(npoint=N//16, nsample=32, xyz=xyz1, points=feature_1.permute(0, 2, 1)) 
         feature_2 = self.gather_local_2(new_feature) # B, C, N
 
         x = self.pt_last(feature_2)
