@@ -219,10 +219,8 @@ class PointTransformer_FPMOD(nn.Module):
         self.bn2 = nn.BatchNorm1d(embd)
 
         self.gather_local_1 = Local_op(in_channels = embd*2, out_channels = embd*2)
-        # self.dp_local_1 = nn.Dropout(p=0.2)
         self.gather_local_2 = Local_op(in_channels = embd*4, out_channels = embd*4)
-        # self.dp_local_2 = nn.Dropout(p=0.2)
-       
+
         self.pt_last = StackedAttention(channels = embd*4, with_oa = with_oa)
 
         self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1, bias=False),
@@ -261,7 +259,7 @@ class PointTransformer_FPMOD(nn.Module):
         x = F.dropout(x, p=0.2)
  
         x = self.conv_fuse(x)
-        x = F.dropout(x, p=0.2)
+        
         x = self.fp2(xyz1.transpose(1,2), xyz2.transpose(1,2), feature_1, x)
         x = self.fp1(xyz0.transpose(1,2), xyz1.transpose(1,2), feature_0, x)
 
