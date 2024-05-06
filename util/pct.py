@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import time
 torch.manual_seed(42)
 
 class OA_Layer(nn.Module):
@@ -48,7 +49,6 @@ class SA_Layer(nn.Module):
         x = self.act(x)
         return x
     
-
 class StackedAttention(nn.Module):
     def __init__(self, channels, with_oa):
         super().__init__()
@@ -84,7 +84,15 @@ class StackedAttention(nn.Module):
                 x_concat = torch.concat([x_concat, x], dim = 1)
         
         return x_concat
-    
+
+def calc_wtime(func):
+    def wrapper(x):   
+        start = time.time()
+        y = func(x)
+        end = time.time()
+        print(f"Size: {y.size()}, Time Taken: {start-end}")
+    return wrapper
+
 if __name__ == "__main__":
     x = torch.rand(2,64,128) # B, C, N
 

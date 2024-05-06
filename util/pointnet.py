@@ -22,8 +22,7 @@ class Local_op(nn.Module):
         x = x.view(batch_size, -1)
         x = x.reshape(b, n, -1).permute(0, 2, 1)
         return x
-    
-    
+     
 def square_distance(src, dst):
     """
     Calculate Euclid distance between each two points.

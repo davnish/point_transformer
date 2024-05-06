@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from util.pct import StackedAttention
+from util.pct import StackedAttention, calc_wtime
 from util.pointnet import sample_and_group_all, Local_op
 from util.pointnet import PointNetFeaturePropagation, sample_and_group
 import torch.nn.functional as F
@@ -223,14 +223,18 @@ class PointTransformer_FPMOD(nn.Module):
 
         self.pt_last = StackedAttention(channels = embd*4, with_oa = with_oa)
 
-        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1, bias=False),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1),
                                    nn.BatchNorm1d(embd*4*4*2),
                                    nn.ReLU(),
-                                   nn.Dropout(p=0.2))
+                                   nn.Dropout(p=0.2),
+                                   nn.Conv1d(embd*4*4*2, embd*4*4, kernel_size=1),
+                                   nn.BatchNorm1d(embd*4*4),
+                                   nn.ReLU(),
+                                   nn.Dropout(p=0.2),)
 
 
-        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*4, embd*4*2], drp_add=True)
-        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*4, embd*2], drp_add=True)
+        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd*2), mlp=[embd*4*4, embd*4*2], drp_add=True)
+        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*4*2, embd*4, embd*2], drp_add=True)
 
         self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
@@ -244,19 +248,17 @@ class PointTransformer_FPMOD(nn.Module):
         feature_0 = F.dropout(F.relu(self.bn2(self.conv2(x))), p=0.2) # B, D, N
 
 
-        xyz1, new_feature = sample_and_group(npoint=N//4, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
+        xyz1, new_feature = sample_and_group(npoint=N//8, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
         feature_1 = F.dropout(self.gather_local_1(new_feature), p=0.2)
 
-        xyz2, new_feature = sample_and_group(npoint=N//16, nsample=32, xyz=xyz1, points=feature_1.permute(0, 2, 1)) 
+        xyz2, new_feature = sample_and_group(npoint=N//64, nsample=32, xyz=xyz1, points=feature_1.permute(0, 2, 1)) 
         feature_2 = F.dropout(self.gather_local_2(new_feature), p=0.2) # B, C, N
-
 
         x = self.pt_last(feature_2)
         
         x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
 
         x = torch.cat([x, x1], dim = 1)
-        x = F.dropout(x, p=0.2)
  
         x = self.conv_fuse(x)
         
@@ -272,26 +274,22 @@ class PointTransformer_FPMOD(nn.Module):
 
 if __name__ == '__main__':
 
-    x = torch.rand((8,512,3))
+    import time
+    x = torch.rand((8,4096,3))
 
-    model = NaivePointTransformer(embd=64)
-    y = model(x)
-    print(y.size())
+    # model = NaivePointTransformer(embd=64)
+    # calc_wtime(model)(x)
 
-    model = SimplePointTransformer(embd=64)
-    y = model(x)
-    print(y.size())
+    # model = SimplePointTransformer(embd=64)
+    # calc_wtime(model)(x)
 
-    model = PointTransformer(embd=64)
-    y = model(x)
-    print(y.size())
+    # model = PointTransformer(embd=64)
+    # calc_wtime(model)(x)
 
-    model = PointTransformer_FP(embd=64)
-    y = model(x)
-    print(y.size())    
-
+    # model = PointTransformer_FP(embd=64)
+    # calc_wtime(model)(x)
+   
     model = PointTransformer_FPMOD(embd=64)
-    y = model(x)
-    print(y.size())    
+    calc_wtime(model)(x)
 
     pass
