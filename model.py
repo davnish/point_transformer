@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-from util.pct import StackedAttention, calc_wtime
-from util.pointnet import sample_and_group_all, Local_op
-from util.pointnet import PointNetFeaturePropagation, sample_and_group
+from util import StackedAttention, calc_wtime
+from util import Local_op
+from util import PointNetFeaturePropagation, sample_and_group
 import torch.nn.functional as F
 torch.manual_seed(42)
 
@@ -226,11 +226,11 @@ class PointTransformer_FPMOD(nn.Module):
         self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1),
                                    nn.BatchNorm1d(embd*4*4*2),
                                    nn.ReLU(),
-                                   nn.Dropout(p=0.2),
+                                   nn.Dropout(p=0.4),
                                    nn.Conv1d(embd*4*4*2, embd*4*4, kernel_size=1),
                                    nn.BatchNorm1d(embd*4*4),
                                    nn.ReLU(),
-                                   nn.Dropout(p=0.2),)
+                                   nn.Dropout(p=0.4),)
 
 
         self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd*2), mlp=[embd*4*4, embd*4*2], drp_add=True)
@@ -249,10 +249,10 @@ class PointTransformer_FPMOD(nn.Module):
 
 
         xyz1, new_feature = sample_and_group(npoint=N//8, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
-        feature_1 = F.dropout(self.gather_local_1(new_feature), p=0.2)
+        feature_1 = F.dropout(self.gather_local_1(new_feature), p=0.4)
 
         xyz2, new_feature = sample_and_group(npoint=N//64, nsample=32, xyz=xyz1, points=feature_1.permute(0, 2, 1)) 
-        feature_2 = F.dropout(self.gather_local_2(new_feature), p=0.2) # B, C, N
+        feature_2 = F.dropout(self.gather_local_2(new_feature), p=0.4) # B, C, N
 
         x = self.pt_last(feature_2)
         
@@ -264,8 +264,6 @@ class PointTransformer_FPMOD(nn.Module):
         
         x = self.fp2(xyz1.transpose(1,2), xyz2.transpose(1,2), feature_1, x)
         x = self.fp1(xyz0.transpose(1,2), xyz1.transpose(1,2), feature_0, x)
-
-        # x = F.relu(self.bn(self.linear(x)))
 
         x = self.logits(x)
         

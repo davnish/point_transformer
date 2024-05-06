@@ -52,7 +52,6 @@ def index_points(points, idx):
     res = torch.gather(points, 1, idx[..., None].expand(-1, -1, points.size(-1)))
     return res.reshape(*raw_size, -1)
 
-
 def farthest_point_sample(xyz, npoint):
     """
     Input:
@@ -74,7 +73,6 @@ def farthest_point_sample(xyz, npoint):
         distance = torch.min(distance, dist)
         farthest = torch.max(distance, -1)[1]
     return centroids
-
 
 def query_ball_point(radius, nsample, xyz, new_xyz):
     """
@@ -183,7 +181,7 @@ class PointNetFeaturePropagation(nn.Module):
 
             self.mlp_bns.append(nn.BatchNorm1d(out_channel))
             if self.drp_add:
-                self.mlp_drp.append(nn.Dropout(p=0.2))
+                self.mlp_drp.append(nn.Dropout(p=0.4))
             last_channel = out_channel
         self.relu = nn.ReLU()
         
@@ -230,7 +228,6 @@ class PointNetFeaturePropagation(nn.Module):
                 drp = self.mlp_drp[i]
                 new_points = drp(new_points)
         return new_points
-
 
 if __name__ == "__main__":
     a = torch.rand(2, 400, 10)
