@@ -245,7 +245,7 @@ class PointTransformer_FPMOD(nn.Module):
         x = x.permute(0, 2, 1)
 
         x = F.relu(self.bn1(self.conv1(x)))
-        feature_0 = F.dropout(F.relu(self.bn2(self.conv2(x))), p=0.2) # B, D, N
+        feature_0 = F.relu(self.bn2(self.conv2(x))) # B, D, N
 
 
         xyz1, new_feature = sample_and_group(npoint=N//8, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
