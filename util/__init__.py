@@ -4,4 +4,7 @@ from .pct import StackedAttention
 from .pct import calc_wtime
 from .pointnet import Local_op
 from .pointnet import sample_and_group
+from .pointnet import sample_and_group_all
+from .pointnet import farthest_point_sample
+from .pointnet import index_points
 from .pointnet import PointNetFeaturePropagation

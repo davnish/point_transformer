@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
-from util import StackedAttention, calc_wtime
-from util import Local_op
-from util import PointNetFeaturePropagation, sample_and_group
+from util import StackedAttention, calc_wtime, Local_op
+from util import PointNetFeaturePropagation, sample_and_group, sample_and_group_all
 import torch.nn.functional as F
 torch.manual_seed(42)
 
@@ -208,10 +207,11 @@ class PointTransformer_FP(nn.Module):
         return x
 
 class PointTransformer_FPMOD(nn.Module):
-    def __init__(self, embd = 64, with_oa = True):
+    def __init__(self, embd = 64, with_oa = True, dp = 0.4):
         super().__init__()
         output_channels = 8
         d_points = 3
+        self.dp = dp
         self.conv1 = nn.Conv1d(d_points, embd, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm1d(embd)
 
@@ -226,15 +226,17 @@ class PointTransformer_FPMOD(nn.Module):
         self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1),
                                    nn.BatchNorm1d(embd*4*4*2),
                                    nn.ReLU(),
-                                   nn.Dropout(p=0.4),
+                                   nn.Dropout(p=self.dp),
                                    nn.Conv1d(embd*4*4*2, embd*4*4, kernel_size=1),
                                    nn.BatchNorm1d(embd*4*4),
                                    nn.ReLU(),
-                                   nn.Dropout(p=0.4),)
+                                   nn.Dropout(p=self.dp),)
 
+        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd*2), mlp=[embd*4*4, embd*4*2], drp_add=True, p=self.dp)
+        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*4*2, embd*4], drp_add=True, p=self.dp)
 
-        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd*2), mlp=[embd*4*4, embd*4*2], drp_add=True)
-        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*4*2, embd*4, embd*2], drp_add=True)
+        self.conv3 = nn.Conv1d(embd*4, embd*2, kernel_size=1)
+        self.bn3 = nn.BatchNorm1d(embd*2)
 
         self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
@@ -249,22 +251,25 @@ class PointTransformer_FPMOD(nn.Module):
 
 
         xyz1, new_feature = sample_and_group(npoint=N//8, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
-        feature_1 = F.dropout(self.gather_local_1(new_feature), p=0.4)
+        feature_1 = F.dropout(self.gather_local_1(new_feature), p=self.dp)
 
         xyz2, new_feature = sample_and_group(npoint=N//64, nsample=32, xyz=xyz1, points=feature_1.permute(0, 2, 1)) 
-        feature_2 = F.dropout(self.gather_local_2(new_feature), p=0.4) # B, C, N
+        feature_2 = F.dropout(self.gather_local_2(new_feature), p=self.dp) # B, C, N
 
         x = self.pt_last(feature_2)
         
         x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
 
         x = torch.cat([x, x1], dim = 1)
- 
+
+        x = F.dropout(x, p=self.dp)
+
         x = self.conv_fuse(x)
         
         x = self.fp2(xyz1.transpose(1,2), xyz2.transpose(1,2), feature_1, x)
         x = self.fp1(xyz0.transpose(1,2), xyz1.transpose(1,2), feature_0, x)
-
+        
+        x= F.relu(self.bn3(self.conv3(x)))
         x = self.logits(x)
         
         x = x.permute(0, 2, 1)
@@ -275,17 +280,17 @@ if __name__ == '__main__':
     import time
     x = torch.rand((8,4096,3))
 
-    # model = NaivePointTransformer(embd=64)
-    # calc_wtime(model)(x)
+    model = NaivePointTransformer(embd=64)
+    calc_wtime(model)(x)
 
-    # model = SimplePointTransformer(embd=64)
-    # calc_wtime(model)(x)
+    model = SimplePointTransformer(embd=64)
+    calc_wtime(model)(x)
 
-    # model = PointTransformer(embd=64)
-    # calc_wtime(model)(x)
+    model = PointTransformer(embd=64)
+    calc_wtime(model)(x)
 
-    # model = PointTransformer_FP(embd=64)
-    # calc_wtime(model)(x)
+    model = PointTransformer_FP(embd=64)
+    calc_wtime(model)(x)
    
     model = PointTransformer_FPMOD(embd=64)
     calc_wtime(model)(x)

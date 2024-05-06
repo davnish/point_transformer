@@ -167,7 +167,7 @@ def fps_numpy(points, num_points):
     return sampled_pnts
 
 class PointNetFeaturePropagation(nn.Module):
-    def __init__(self, in_channel, mlp, drp_add = False):
+    def __init__(self, in_channel, mlp, drp_add = False, p = 0.2):
         super(PointNetFeaturePropagation, self).__init__()
 
         self.mlp_convs = nn.ModuleList()
@@ -181,7 +181,7 @@ class PointNetFeaturePropagation(nn.Module):
 
             self.mlp_bns.append(nn.BatchNorm1d(out_channel))
             if self.drp_add:
-                self.mlp_drp.append(nn.Dropout(p=0.4))
+                self.mlp_drp.append(nn.Dropout(p=p))
             last_channel = out_channel
         self.relu = nn.ReLU()
         

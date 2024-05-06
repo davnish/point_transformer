@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
-from util.pointnet import farthest_point_sample, index_points
+from util import farthest_point_sample, index_points
 import os
 import numpy as np
 import laspy
