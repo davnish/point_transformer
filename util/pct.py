@@ -85,12 +85,13 @@ class StackedAttention(nn.Module):
         
         return x_concat
 
-def calc_wtime(func):
+def calc_wtime(model):
     def wrapper(x):   
         start = time.time()
-        y = func(x)
+        y = model(x)
         end = time.time()
-        print(f"Size: {y.size()}, Time Taken: {end-start}")
+        total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        print(f"Size: {y.size()}, Time Taken: {end-start}, Total Param: {total_params}")
     return wrapper
 
 if __name__ == "__main__":

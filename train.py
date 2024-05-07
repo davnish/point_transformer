@@ -7,6 +7,7 @@ import time
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 import argparse
 import os
+import pandas as pd
 torch.manual_seed(42)
 
 #Training the model
@@ -124,17 +125,29 @@ if __name__ == '__main__':
     print("Running Epochs")
     print(f'{device = }, {args.grid_size = }, {args.points_taken = }, {args.epoch = }, {args.embd = }, {args.batch_size = }, {args.lr = }')
     start = time.time()
+    df = {'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': []}
     for _epoch in range(1, args.epoch+1): 
         train_loss, train_acc, bal_avg_acc = train_loop(train_loader)
         scheduler.step()
         if _epoch%args.eval==0:
             val_loss, val_acc, bal_val_acc, _ = test_loop(test_loader, loss_fn, model, device)
+            df['train_loss'].append(train_loss)
+            df['train_acc'].append(train_acc)
+            df['val_loss'].append(val_loss)
+            df['val_acc'].append(val_acc)
             print(f'Epoch {_epoch} | lr: {scheduler.get_last_lr()}:\n train_loss: {train_loss:.4f} | train_acc: {train_acc:.4f} | bal_train_acc: {bal_avg_acc:.4f}\n val_loss: {val_loss:.4f} | val_acc: {val_acc:.4f} | bal_val_acc: {bal_val_acc:.4f}')
-
     end = time.time()
-
     print(f'Total_time: {end-start}')
+    
+    # Saving the results
+    df = pd.DataFrame(df)
+    if os.path.exists(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv")):
+        dfex = pd.read_csv(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv"))
+        df = pd.concat([dfex, df], ignore_index=True)
 
+    df.to_csv(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv")) #saving the results
+    
+    
     if not os.path.exists(os.path.join("checkpoints",)):
         os.makedirs(os.path.join("checkpoints"))
     torch.save({
