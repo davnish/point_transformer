@@ -90,7 +90,7 @@ def calc_wtime(func):
         start = time.time()
         y = func(x)
         end = time.time()
-        print(f"Size: {y.size()}, Time Taken: {start-end}")
+        print(f"Size: {y.size()}, Time Taken: {end-start}")
     return wrapper
 
 if __name__ == "__main__":

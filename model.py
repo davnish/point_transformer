@@ -245,11 +245,9 @@ class PointTransformer_FPMOD(nn.Module):
         N = x.size(1)
         xyz0 = x
         x = x.permute(0, 2, 1)
-
         x = F.relu(self.bn1(self.conv1(x)))
-        x = F.dropout(x, p=self.dp)
-        x = F.relu(self.bn2(self.conv2(x))) # B, D, N
-        feature_0 = F.dropout(x, p=self.dp)
+        feature_0 = F.relu(self.bn2(self.conv2(x))) # B, D, N
+        # feature_0 = F.dropout(x, p=self.dp)
         xyz1, new_feature = sample_and_group(npoint=N//4, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
         feature_1 = F.dropout(self.gather_local_1(new_feature), p=self.dp)
 
@@ -278,7 +276,7 @@ class PointTransformer_FPMOD(nn.Module):
 if __name__ == '__main__':
 
     import time
-    x = torch.rand((8,4096,3))
+    x = torch.rand((8,512,3))
 
     model = NaivePointTransformer(embd=64)
     calc_wtime(model)(x)
