@@ -19,7 +19,7 @@ class NaivePointTransformer(nn.Module):
         
         self.conv5 = nn.Conv1d(embd*4*2, embd*2, 1)
         self.bn5 = nn.BatchNorm1d(embd*2)
-        self.dp5 = nn.Dropout(p=0.2)
+        self.dp5 = nn.Dropout(p=0.5)
         self.conv6 = nn.Conv1d(embd*2, embd*2, 1)
         self.bn6 = nn.BatchNorm1d(embd*2)
 
@@ -207,7 +207,7 @@ class PointTransformer_FP(nn.Module):
         return x
 
 class PointTransformer_FPMOD(nn.Module):
-    def __init__(self, embd = 64, with_oa = True, dp = 0.4):
+    def __init__(self, embd = 64, with_oa = True, dp = 0.5):
         super().__init__()
         output_channels = 8
         d_points = 3
@@ -247,13 +247,13 @@ class PointTransformer_FPMOD(nn.Module):
         x = x.permute(0, 2, 1)
 
         x = F.relu(self.bn1(self.conv1(x)))
-        feature_0 = F.relu(self.bn2(self.conv2(x))) # B, D, N
-
-
-        xyz1, new_feature = sample_and_group(npoint=N//8, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
+        x = F.dropout(x, p=self.dp)
+        x = F.relu(self.bn2(self.conv2(x))) # B, D, N
+        feature_0 = F.dropout(x, p=self.dp)
+        xyz1, new_feature = sample_and_group(npoint=N//4, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
         feature_1 = F.dropout(self.gather_local_1(new_feature), p=self.dp)
 
-        xyz2, new_feature = sample_and_group(npoint=N//64, nsample=32, xyz=xyz1, points=feature_1.permute(0, 2, 1)) 
+        xyz2, new_feature = sample_and_group(npoint=N//16, nsample=32, xyz=xyz1, points=feature_1.permute(0, 2, 1)) 
         feature_2 = F.dropout(self.gather_local_2(new_feature), p=self.dp) # B, C, N
 
         x = self.pt_last(feature_2)
