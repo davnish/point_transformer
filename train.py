@@ -76,6 +76,8 @@ if __name__ == '__main__':
     parser.add_argument('--eval', type = int, default = 1)
     parser.add_argument('--embd', type = int, default = 64)
     parser.add_argument('--model', type = str, default = 'PCT')
+    parser.add_argument('--load_checkpoint', type = bool, default = False)
+    parser.add_argument('--dp', type = int, default = 0.5)
     args = parser.parse_args()
 
     # Setting Device
@@ -93,13 +95,31 @@ if __name__ == '__main__':
     # Initialize the model
     model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer, 
              'PCT_FP': PointTransformer_FP, 'PCT_FPMOD': PointTransformer_FPMOD}
-    model = model[args.model](args.embd)
+    if args.model == 'PCT_FPMOD':
+
+        model = model[args.model](args.embd, dp = args.dp)
+    else:
+        model = model[args.model](args.embd)
+
 
     # loss, Optimizer, Scheduler
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr = args.lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = args.step_size, gamma = 0.6)
     model = model.to(device)
+    
+    try:
+        if args.load_checkpoint:
+            checkpoint = torch.load(os.path.join("checkpoints", f"{args.model}_{args.model_name}.pt"))
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            print('Checkpoint Loaded')
+    except Exception as e:
+        print(e)
+        ans = input('Do you want to continue without loading checkpoint (y/n):')
+        if ans == 'n':
+            quit()
+
 
     print("Running Epochs")
     print(f'{device = }, {args.grid_size = }, {args.points_taken = }, {args.epoch = }, {args.embd = }, {args.batch_size = }, {args.lr = }')
@@ -110,12 +130,17 @@ if __name__ == '__main__':
         if _epoch%args.eval==0:
             val_loss, val_acc, bal_val_acc, _ = test_loop(test_loader, loss_fn, model, device)
             print(f'Epoch {_epoch} | lr: {scheduler.get_last_lr()}:\n train_loss: {train_loss:.4f} | train_acc: {train_acc:.4f} | bal_train_acc: {bal_avg_acc:.4f}\n val_loss: {val_loss:.4f} | val_acc: {val_acc:.4f} | bal_val_acc: {bal_val_acc:.4f}')
-        
+
     end = time.time()
 
     print(f'Total_time: {end-start}')
 
-    if not os.path.exists(os.path.join("models", "best")):
-        os.makedirs(os.path.join("models", "best"))
-    torch.save(model.state_dict(), os.path.join("models", "best", f"{args.model}_{args.model_name}.pt"))
+    if not os.path.exists(os.path.join("checkpoints",)):
+        os.makedirs(os.path.join("checkpoints"))
+    torch.save({
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'epoch' : args.epoch
+            }, os.path.join("checkpoints", f"{args.model}_{args.model_name}.pt"))
+    # torch.save(model.state_dict(), os.path.join("checkpoints", f"{args.model}_{args.model_name}.pt"))
     print(f"Model Saved at {args.epoch} epochs, named: {args.model}_{args.model_name}.pt")
