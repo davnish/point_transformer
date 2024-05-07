@@ -78,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--embd', type = int, default = 64)
     parser.add_argument('--model', type = str, default = 'PCT')
     parser.add_argument('--load_checkpoint', type = bool, default = False)
-    parser.add_argument('--dp', type = int, default = 0.5)
+    parser.add_argument('--dp', type = float, default = 0.5)
     args = parser.parse_args()
 
     # Setting Device
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     
     # Saving the results
     df = pd.DataFrame(df)
-    if os.path.exists(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv")):
+    if os.path.exists(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv")) and args.load_checkpoint:
         dfex = pd.read_csv(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv"))
         df = pd.concat([dfex, df], ignore_index=True)
 
