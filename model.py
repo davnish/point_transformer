@@ -171,14 +171,12 @@ class PointTransformer_FP(nn.Module):
         self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1),
                                    nn.BatchNorm1d(embd*4*4*2),
                                    nn.ReLU(),
-                                   nn.Dropout(p=self.dp),
                                    nn.Conv1d(embd*4*4*2, embd*4*4, kernel_size=1),
                                    nn.BatchNorm1d(embd*4*4),
-                                   nn.ReLU(),
-                                   nn.Dropout(p=self.dp),)
+                                   nn.ReLU())
 
-        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd*2), mlp=[embd*4*4, embd*4*2], drp_add=True, p=self.dp)
-        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*4*2, embd*4], drp_add=True, p=self.dp)
+        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd*2), mlp=[embd*4*4, embd*4*2], drp_add=False, p=self.dp)
+        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd), mlp=[embd*4*2, embd*4], drp_add=False, p=self.dp)
 
         self.conv3 = nn.Conv1d(embd*4, embd*2, kernel_size=1)
         self.bn3 = nn.BatchNorm1d(embd*2)
@@ -194,10 +192,12 @@ class PointTransformer_FP(nn.Module):
         feature_0 = F.relu(self.bn2(self.conv2(x))) # B, D, N
         # feature_0 = F.dropout(x, p=self.dp)
         xyz1, new_feature = sample_and_group(npoint=N//8, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
-        feature_1 = F.dropout(self.gather_local_1(new_feature), p=self.dp)
+        feature_1 = self.gather_local_1(new_feature)
+        # feature_1 = F.dropout(self.gather_local_1(new_feature), p=self.dp)
 
         xyz2, new_feature = sample_and_group(npoint=N//64, nsample=32, xyz=xyz1, points=feature_1.permute(0, 2, 1)) 
-        feature_2 = F.dropout(self.gather_local_2(new_feature), p=self.dp) # B, C, N
+        feature_2 = self.gather_local_2(new_feature) # B, C, N
+        # feature_2 = F.dropout(self.gather_local_2(new_feature), p=self.dp) # B, C, N
 
         x = self.pt_last(feature_2)
         
@@ -205,7 +205,7 @@ class PointTransformer_FP(nn.Module):
 
         x = torch.cat([x, x1], dim = 1)
 
-        x = F.dropout(x, p=self.dp)
+        # x = F.dropout(x, p=self.dp)
 
         x = self.conv_fuse(x)
         
