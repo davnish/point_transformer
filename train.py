@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
-from model import PointTransformer, NaivePointTransformer, SimplePointTransformer, PointTransformer_FP, PointTransformer_FPMOD
+from model import PointTransformer, NaivePointTransformer, SimplePointTransformer, PointTransformer_FP
+from model import PointTransformer_FPMOD
+from model import PointTransformer_FPADV
 from dataset import Dales
 import time
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
@@ -95,7 +97,7 @@ if __name__ == '__main__':
 
     # Initialize the model
     model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer, 
-             'PCT_FP': PointTransformer_FP, 'PCT_FPMOD': PointTransformer_FPMOD}
+             'PCT_FP': PointTransformer_FP, 'PCT_FPMOD': PointTransformer_FPMOD, 'PCT_FPADV': PointTransformer_FPADV}
     if args.model == 'PCT_FPMOD':
 
         model = model[args.model](args.embd, dp = args.dp)
@@ -105,7 +107,7 @@ if __name__ == '__main__':
 
     # loss, Optimizer, Scheduler
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr = args.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr = args.lr, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = args.step_size, gamma = 0.6)
     model = model.to(device)
     
@@ -113,7 +115,8 @@ if __name__ == '__main__':
         if args.load_checkpoint:
             checkpoint = torch.load(os.path.join("checkpoints", f"{args.model}_{args.model_name}.pt"))
             model.load_state_dict(checkpoint['model_state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            # optimizer.param_groups['lr'] = args.lr
             print('Checkpoint Loaded')
     except Exception as e:
         print(e)
@@ -145,7 +148,7 @@ if __name__ == '__main__':
         dfex = pd.read_csv(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv"))
         df = pd.concat([dfex, df], ignore_index=True)
 
-    df.to_csv(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv")) #saving the results
+    df.to_csv(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv"), index=False) #saving the results
     
     
     if not os.path.exists(os.path.join("checkpoints",)):

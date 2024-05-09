@@ -1,0 +1,7 @@
+TILES : 5080_54435.las,  5085_54320.las, 5095_54440.las, 5095_54455.las
+
+PCT_FP_1 : Trained for 200 epochs
+    Total_time: 6195.745387554169
+    train_loss: 0.0838 | train_acc: 0.9677 | bal_train_acc: 0.9251
+    val_loss: 0.3553 | val_acc: 0.9063 | bal_val_acc: 0.5816
+
