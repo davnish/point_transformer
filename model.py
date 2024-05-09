@@ -328,23 +328,34 @@ class PointTransformer_FPADV(nn.Module):
         feature_0 = F.relu(self.bn1(self.conv1(x)))
 
         xyz1, new_feature = sample_and_group(npoint=N//8, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
-        feature_1 = self.gather_local_1(new_feature)
+        x = self.gather_local_1(new_feature)
+
+        feature_1 = F.dropout(x, p=0.4)
 
         xyz2, new_feature = sample_and_group(npoint=N//64, nsample=32, xyz=xyz1, points=feature_1.permute(0, 2, 1)) 
-        feature_2 = self.gather_local_2(new_feature) # B, C, N
+        x = self.gather_local_2(new_feature) # B, C, N
+
+        feature_2 = F.dropout(x, p = 0.5)
 
         x = self.pt_last(feature_2)
         
         x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
 
         x = torch.cat([x, x1], dim = 1)
-        x = F.dropout(x , p=0.9)
+
+        x = F.dropout(x , p=0.5)
+        
         x = self.conv_fuse(x)
         
         x = self.fp2(xyz1.transpose(1,2), xyz2.transpose(1,2), feature_1, x)
+
+        x = F.dropout(x, p=0.5)
+
         x = self.fp1(xyz0.transpose(1,2), xyz1.transpose(1,2), feature_0, x)
         
-        x= F.relu(self.bn3(self.conv3(x)))
+        x = F.dropout(x, p=0.5) 
+
+        x = F.relu(self.bn3(self.conv3(x)))
         x = self.logits(x)
         
         x = x.permute(0, 2, 1)

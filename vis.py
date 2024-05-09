@@ -69,8 +69,8 @@ if __name__ == "__main__":
 
     model_name = "PCT_FPADV"
     model_no = 1
-    model_path = os.path.join("checkpoints", 'saved', f"{model_name}_{model_no}_120.pt")
-    csv_path = os.path.join("checkpoints", 'saved', f"{model_name}_{model_no}_120.csv")
+    model_path = os.path.join("checkpoints", 'saved', f"{model_name}_{model_no}_240.pt")
+    csv_path = os.path.join("checkpoints", 'saved', f"{model_name}_{model_no}_240.csv")
     pcd = visualize_model(model_path, model_name)
     # o3d.visualization.draw_geometries([pcd])
     res_plot(csv_path)
