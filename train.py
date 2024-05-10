@@ -78,15 +78,16 @@ def save_progress(model, df, epoch):
         }, os.path.join(path, f"{args.model}_{args.model_name}_{_epoch}.pt"))
     # torch.save(model.state_dict(), os.path.join("checkpoints", f"{args.model}_{args.model_name}.pt"))
     save_csv(df, epoch)
-    print(f"Model Saved at {epoch} epochs, named: {args.model}_{args.model_name}_{_epoch}.pt")
+    print(f"Model Saved at {epoch} epochs, named: {args.model}_{args.model_name}_{epoch}.pt")
 
 def save_csv(df, epoch):
     path = os.path.join("checkpoints", f"model_{args.model_name}")
     df = pd.DataFrame(df)
     mx = recent_epoch()
-    mx_file = os.path.join(path,  f"{args.model}_{args.model_name}_{mx}.csv")
-    dfex = pd.read_csv(mx_file)
-    df = pd.concat([dfex, df], ignore_index=True)
+    if mx>0:
+        mx_file = os.path.join(path, f"{args.model}_{args.model_name}_{mx}.csv")
+        dfex = pd.read_csv(mx_file)
+        df = pd.concat([dfex, df], ignore_index=True)
     df.to_csv(os.path.join(path,  f"{args.model}_{args.model_name}_{epoch}.csv"), index=False)
 
 def recent_epoch():
