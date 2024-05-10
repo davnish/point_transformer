@@ -10,6 +10,7 @@ from sklearn.metrics import accuracy_score, balanced_accuracy_score
 import argparse
 import os
 import pandas as pd
+import glob
 torch.manual_seed(42)
 
 #Training the model
@@ -66,6 +67,36 @@ def test_loop(loader, loss_fn, model, device):
     # print(f'val_loss: {total_loss/len(test_loader)}, val_acc: {accuracy_score(y_true, y_preds)}')  
     return total_loss/len(loader), accuracy_score(y_true, y_preds), balanced_accuracy_score(y_true, y_preds), y_preds
 
+def save_progress(model, df, epoch):
+    path = os.path.join("checkpoints", f"model_{args.model_name}")
+    if not os.path.exists(path):
+        os.makedirs(path)
+    torch.save({
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'epoch' : args.epoch
+        }, os.path.join(path, f"{args.model}_{args.model_name}_{_epoch}.pt"))
+    # torch.save(model.state_dict(), os.path.join("checkpoints", f"{args.model}_{args.model_name}.pt"))
+    save_csv(df, epoch)
+    print(f"Model Saved at {epoch} epochs, named: {args.model}_{args.model_name}_{_epoch}.pt")
+
+def save_csv(df, epoch):
+    path = os.path.join("checkpoints", f"model_{args.model_name}")
+    df = pd.DataFrame(df)
+    mx = recent_epoch()
+    mx_file = os.path.join(path,  f"{args.model}_{args.model_name}_{mx}.csv")
+    dfex = pd.read_csv(mx_file)
+    df = pd.concat([dfex, df], ignore_index=True)
+    df.to_csv(os.path.join(path,  f"{args.model}_{args.model_name}_{epoch}.csv"), index=False)
+
+def recent_epoch():
+    path = os.path.join("checkpoints", f"model_{args.model_name}")
+    mx = 0
+    for x in glob.glob(os.path.join(path, f"{args.model}_{args.model_name}_*.csv")):
+        n = int(x.split('\\')[-1].split('.')[0].split('_')[-1])
+        mx = n if mx<n else mx
+    return mx
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -81,6 +112,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type = str, default = 'PCT')
     parser.add_argument('--load_checkpoint', type = bool, default = False)
     parser.add_argument('--dp', type = float, default = 0.5)
+    parser.add_argument('--save_freq', type = int, default = 20)
     args = parser.parse_args()
 
     # Setting Device
@@ -98,8 +130,8 @@ if __name__ == '__main__':
     # Initialize the model
     model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer, 
              'PCT_FP': PointTransformer_FP, 'PCT_FPMOD': PointTransformer_FPMOD, 'PCT_FPADV': PointTransformer_FPADV}
-    if args.model == 'PCT_FPMOD':
-
+    
+    if args.model == 'PCT_FPMOD' or args.model == 'PCT_FPADV':
         model = model[args.model](args.embd, dp = args.dp)
     else:
         model = model[args.model](args.embd)
@@ -113,10 +145,9 @@ if __name__ == '__main__':
     
     try:
         if args.load_checkpoint:
-            checkpoint = torch.load(os.path.join("checkpoints", f"{args.model}_{args.model_name}.pt"))
-            model.load_state_dict(checkpoint['model_state_dict'])
+            checkpoint = torch.load(os.path.join("checkpoints", f"model_{args.model_name}", f"{args.model}_{args.model_name}_{recent_epoch()}.pt"))
+            model.load_state_dict(checkpoint['model_state_dict'], strict = False)
             # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            # optimizer.param_groups['lr'] = args.lr
             print('Checkpoint Loaded')
     except Exception as e:
         print(e)
@@ -139,24 +170,13 @@ if __name__ == '__main__':
             df['val_loss'].append(val_loss)
             df['val_acc'].append(val_acc)
             print(f'Epoch {_epoch} | lr: {scheduler.get_last_lr()}:\n train_loss: {train_loss:.4f} | train_acc: {train_acc:.4f} | bal_train_acc: {bal_avg_acc:.4f}\n val_loss: {val_loss:.4f} | val_acc: {val_acc:.4f} | bal_val_acc: {bal_val_acc:.4f}')
+        
+        if _epoch%args.save_freq == 0:
+            save_progress(model, df, _epoch)
+            df = {'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': []}
     end = time.time()
     print(f'Total_time: {end-start}')
     
     # Saving the results
-    df = pd.DataFrame(df)
-    if os.path.exists(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv")) and args.load_checkpoint:
-        dfex = pd.read_csv(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv"))
-        df = pd.concat([dfex, df], ignore_index=True)
-
-    df.to_csv(os.path.join("checkpoints", f"{args.model}_{args.model_name}.csv"), index=False) #saving the results
-    
-    
-    if not os.path.exists(os.path.join("checkpoints",)):
-        os.makedirs(os.path.join("checkpoints"))
-    torch.save({
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'epoch' : args.epoch
-            }, os.path.join("checkpoints", f"{args.model}_{args.model_name}.pt"))
-    # torch.save(model.state_dict(), os.path.join("checkpoints", f"{args.model}_{args.model_name}.pt"))
-    print(f"Model Saved at {args.epoch} epochs, named: {args.model}_{args.model_name}.pt")
+    if args.epoch%args.save_freq != 0:
+        save_progress(model, df, args.epoch)
