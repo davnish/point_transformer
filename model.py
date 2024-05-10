@@ -335,9 +335,9 @@ class PointTransformer_FPADV(nn.Module):
         feature_0 = F.relu(self.bn1(self.conv1(x)))
 
         xyz1, new_feature = sample_and_group(npoint=N//8, nsample=32, xyz=xyz0, points=feature_0.permute(0, 2, 1))         
-        x = self.gather_local_1(new_feature)
+        feature_1 = self.gather_local_1(new_feature)
 
-        feature_1 = self.dp1(x)
+        # feature_1 = self.dp1(x)
 
         xyz2, new_feature = sample_and_group(npoint=N//64, nsample=32, xyz=xyz1, points=feature_1.permute(0, 2, 1)) 
         x = self.gather_local_2(new_feature) # B, C, N
@@ -354,7 +354,7 @@ class PointTransformer_FPADV(nn.Module):
         
         x = self.conv_fuse(x)
 
-        x = self.dp4(x)
+        # x = self.dp4(x)
         
         x = self.fp2(xyz1.transpose(1,2), xyz2.transpose(1,2), feature_1, x)
 
