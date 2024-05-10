@@ -71,24 +71,24 @@ def save_progress(model, df, epoch):
     path = os.path.join("checkpoints", f"model_{args.model_name}")
     if not os.path.exists(path):
         os.makedirs(path)
+    mx = recent_epoch()
     torch.save({
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'epoch' : args.epoch
-        }, os.path.join(path, f"{args.model}_{args.model_name}_{_epoch}.pt"))
+        }, os.path.join(path, f"{args.model}_{args.model_name}_{args.save_freq+mx}.pt"))
     # torch.save(model.state_dict(), os.path.join("checkpoints", f"{args.model}_{args.model_name}.pt"))
-    save_csv(df, epoch)
-    print(f"Model Saved at {epoch} epochs, named: {args.model}_{args.model_name}_{epoch}.pt")
+    save_csv(df, mx)
+    print(f" Model Saved at {epoch} epochs, named: {args.model}_{args.model_name}_{args.save_freq+mx}.pt")
 
-def save_csv(df, epoch):
+def save_csv(df, mx):
     path = os.path.join("checkpoints", f"model_{args.model_name}")
     df = pd.DataFrame(df)
-    mx = recent_epoch()
     if mx>0:
         mx_file = os.path.join(path, f"{args.model}_{args.model_name}_{mx}.csv")
         dfex = pd.read_csv(mx_file)
         df = pd.concat([dfex, df], ignore_index=True)
-    df.to_csv(os.path.join(path,  f"{args.model}_{args.model_name}_{epoch}.csv"), index=False)
+    df.to_csv(os.path.join(path,  f"{args.model}_{args.model_name}_{args.save_freq+mx}.csv"), index=False)
 
 def recent_epoch():
     path = os.path.join("checkpoints", f"model_{args.model_name}")
@@ -158,7 +158,7 @@ if __name__ == '__main__':
 
 
     print("Running Epochs")
-    print(f'{device = }, {args.grid_size = }, {args.points_taken = }, {args.epoch = }, {args.embd = }, {args.batch_size = }, {args.lr = }')
+    print(f'{device = }, {args.grid_size = }, {args.points_taken = }, {args.epoch = }, {args.embd = }, {args.batch_size = }, {args.lr = }, {args.dp = }')
     start = time.time()
     df = {'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': []}
     for _epoch in range(1, args.epoch+1): 
