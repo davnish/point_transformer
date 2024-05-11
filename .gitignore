@@ -7,3 +7,6 @@ __pycache__/
 attention_sample.py
 basic.py
 basic2.py
+*.pt
+*.csv
+*.png

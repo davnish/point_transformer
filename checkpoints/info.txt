@@ -1,0 +1,5 @@
+TILES : 5080_54435.las,  5085_54320.las, 5095_54440.las, 5095_54455.las
+
+PCT_FP_1 : Trained for 200 epochs
+    
+

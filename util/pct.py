@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import time
 torch.manual_seed(42)
 
 class OA_Layer(nn.Module):
@@ -48,7 +49,6 @@ class SA_Layer(nn.Module):
         x = self.act(x)
         return x
     
-
 class StackedAttention(nn.Module):
     def __init__(self, channels, with_oa):
         super().__init__()
@@ -84,7 +84,16 @@ class StackedAttention(nn.Module):
                 x_concat = torch.concat([x_concat, x], dim = 1)
         
         return x_concat
-    
+
+def calc_wtime(model):
+    def wrapper(x):   
+        start = time.time()
+        y = model(x)
+        end = time.time()
+        total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        print(f"Size: {y.size()}, Time Taken: {end-start}, Total Param: {total_params}")
+    return wrapper
+
 if __name__ == "__main__":
     x = torch.rand(2,64,128) # B, C, N
 

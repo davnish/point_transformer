@@ -9,8 +9,6 @@ class Local_op(nn.Module):
         self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm1d(out_channels)
         self.bn2 = nn.BatchNorm1d(out_channels)
-
-
         self.relu = nn.ReLU()
 
     def forward(self, x):
@@ -24,8 +22,7 @@ class Local_op(nn.Module):
         x = x.view(batch_size, -1)
         x = x.reshape(b, n, -1).permute(0, 2, 1)
         return x
-    
-    
+     
 def square_distance(src, dst):
     """
     Calculate Euclid distance between each two points.
@@ -55,7 +52,6 @@ def index_points(points, idx):
     res = torch.gather(points, 1, idx[..., None].expand(-1, -1, points.size(-1)))
     return res.reshape(*raw_size, -1)
 
-
 def farthest_point_sample(xyz, npoint):
     """
     Input:
@@ -77,7 +73,6 @@ def farthest_point_sample(xyz, npoint):
         distance = torch.min(distance, dist)
         farthest = torch.max(distance, -1)[1]
     return centroids
-
 
 def query_ball_point(radius, nsample, xyz, new_xyz):
     """
@@ -126,7 +121,7 @@ def sample_and_group(npoint, nsample, xyz, points):
 
     grouped_points = index_points(points, idx)
     grouped_points_norm = grouped_points - new_points.view(B, S, 1, -1)
-    # print(grouped_points.size())
+    
     new_points = torch.cat([grouped_points_norm, new_points.view(B, S, 1, -1).repeat(1, 1, nsample, 1)], dim=-1)
     return new_xyz, new_points
 
@@ -154,7 +149,6 @@ def fps_numpy(points, num_points):
     pnts_left = np.delete(pnts_left, selected)
     # dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
 
-
     for i in range(1, num_points):
         
 
@@ -173,7 +167,7 @@ def fps_numpy(points, num_points):
     return sampled_pnts
 
 class PointNetFeaturePropagation(nn.Module):
-    def __init__(self, in_channel, mlp, drp_add = True):
+    def __init__(self, in_channel, mlp, drp_add = False, p = 0.2):
         super(PointNetFeaturePropagation, self).__init__()
 
         self.mlp_convs = nn.ModuleList()
@@ -187,7 +181,7 @@ class PointNetFeaturePropagation(nn.Module):
 
             self.mlp_bns.append(nn.BatchNorm1d(out_channel))
             if self.drp_add:
-                self.mlp_drp.append(nn.Dropout(p=0.5))
+                self.mlp_drp.append(nn.Dropout(p=p))
             last_channel = out_channel
         self.relu = nn.ReLU()
         
@@ -234,7 +228,6 @@ class PointNetFeaturePropagation(nn.Module):
                 drp = self.mlp_drp[i]
                 new_points = drp(new_points)
         return new_points
-
 
 if __name__ == "__main__":
     a = torch.rand(2, 400, 10)
