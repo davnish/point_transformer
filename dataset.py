@@ -200,8 +200,12 @@ def grid_als(device, grid_size, points_taken, data, classification):
 
 
 if __name__ == '__main__':
+    import time
+    start = time.time()
     train = Dales('cuda', 25, 4096)
+    end = time.time()
+    print(end-start)
 
-    train = tald('cuda', 25, 4096, partition='test')
-    print(train[0][1].size())
+    # train = tald('cuda', 25, 4096, partition='test')
+    # print(train[0][1].size())
     pass
