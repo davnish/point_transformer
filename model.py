@@ -279,6 +279,8 @@ class PointTransformer_FPMOD(nn.Module):
         x = self.fp1(xyz0.transpose(1,2), xyz1.transpose(1,2), feature_0, x)
         
         # x = self.dp6(x)
+
+        x = self.logits(x)
         
         x = x.permute(0, 2, 1)
         return x

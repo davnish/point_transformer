@@ -73,10 +73,10 @@ def res_plot(csv_path):
 if __name__ == "__main__":
     dataset = 'Dales'
     model_name = "PCT_FPADV"
-    model_no = 2
-    epoch = 20
+    model_no = 5
+    epoch = 160
     model_path = os.path.join("checkpoints", f"model_{model_no}", f"{model_name}_{model_no}_{epoch}.pt")
     csv_path = os.path.join("checkpoints", f"model_{model_no}", f"{model_name}_{model_no}_{epoch}.csv")
     pcd = visualize_model(model_path, model_name, dataset)
-    # o3d.visualization.draw_geometries([pcd])
+    o3d.visualization.draw_geometries([pcd])
     res_plot(csv_path)

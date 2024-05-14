@@ -8,31 +8,6 @@ import laspy
 import h5py
 import glob
 torch.manual_seed(42)
-
-# import open3d as o3d
-
-# class tald(Dataset):
-#     def __init__(self, grid_size, points_taken, partition = 'train'):
-
-#         if os.path.exists(os.path.join("data", "tald", f"{partition}", f"tald_tt_{grid_size}_{points_taken}.npz")): # this starts from the system's path
-#             tiles = np.load(os.path.join("data", "tald" ,f"{partition}", f"tald_tt_{grid_size}_{points_taken}.npz"))
-#             self.data = tiles['x']
-#             self.label = tiles['y']
-#         else:
-#             df = pd.read_csv(os.path.join("data", "tald", f"{partition}", "test_features.txt"))
-#             df["Classification"].replace([3., 2., 6., 5. , 4., 7.], [0, 1, 2, 3, 4, 5], inplace=True)
-#             self.data, self.label = grid_als(grid_size, points_taken, df.iloc[:,[0,1,2]].to_numpy(), df["Classification"].to_numpy())
-
-#             np.savez(os.path.join("data", "tald", f"tald_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
-    
-#     def __getitem__(self, idx):
-#         pointcloud = torch.tensor(self.data[idx]).float()
-#         label = torch.tensor(self.label[idx], dtype = torch.uint8)
-
-#         return pointcloud, label
-    
-    # def __len__(self):
-    #     return self.data.shape[0]
     
 class tald(Dataset):
     def __init__(self, device, grid_size, points_taken, partition='train'):
@@ -46,7 +21,7 @@ class tald(Dataset):
         else:
             self.data = None
             self.label = None
-            for fl in glob.glob(os.path.join("data", "tald", f"{partition}","*.las")):
+            for fl in glob.glob(os.path.join("data", "tald", f"{partition}","*.laz")):
                 las = laspy.read(fl)
                 # las_classification = las_label_replace(las)
                 # df["Classification"].replace([3., 2., 6., 5. , 4., 7.], [0, 1, 2, 3, 4, 5], inplace=True)
@@ -142,7 +117,7 @@ def las_label_replace(las, dataset):
     # df["Classification"].replace([3., 2., 6., 5. , 4., 7.], [0, 1, 2, 3, 4, 5], inplace=True)
     elif dataset == 'tald':
         las_classification = np.asarray(las.classification)
-        mapping = {3:0, 2:1, 6:2, 5:3, 4:4, 7:5}
+        mapping = {2:0, 3:1, 4:1, 5:7}
         for old, new in mapping.items():
             las_classification[las_classification == old] = new
     
@@ -168,7 +143,7 @@ def grid_als(device, grid_size, points_taken, data, classification):
     grid_lengths = [len(i) for i in grid_point_clouds.values()]
     mn_points = min(grid_lengths)
     mx_points = max(grid_lengths)
-    min_grid_points = (mx_points - mn_points) * 0.2
+    min_grid_points = (mx_points - mn_points) * 0.1
 
     for grid, label in zip(grid_point_clouds.values(), grid_point_clouds_label.values()):
 
@@ -197,7 +172,6 @@ def grid_als(device, grid_size, points_taken, data, classification):
     tiles_np_labels = np.asarray(tiles_labels)
 
     return tiles_np, tiles_np_labels
-
 
 if __name__ == '__main__':
     import time

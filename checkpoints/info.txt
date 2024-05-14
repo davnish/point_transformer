@@ -1,5 +1,9 @@
 TILES : 5080_54435.las,  5085_54320.las, 5095_54440.las, 5095_54455.las
 
-PCT_FP_1 : Trained for 200 epochs
+model_1 : old but improved model, on lab pc
+model_2 : new got the dropout figured, on lab pc
+model_3 : on gpu with 8 tiles got accuracy reached to 0.94
+model_4 : on PCT_FPMOD a smaller model on testing, on lab pc using 2m parameters
+model_5 : This is trained on whole dataset, on GPU 2 cluster
     
 

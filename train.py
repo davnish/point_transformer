@@ -64,7 +64,7 @@ def test_loop(loader, loss_fn, model, device):
         y_true.extend(label.view(-1).cpu().tolist())
         y_preds.extend(preds.detach().cpu().tolist())
 
-    # print(f'val_loss: {total_loss/len(test_loader)}, val_acc: {accuracy_score(y_true, y_preds)}')  
+    # print(f'val_loss: {total_loss/len(test_loader)}, val_acc: {accuracy_score(y_true, y_preds)}')
     return total_loss/len(loader), accuracy_score(y_true, y_preds), balanced_accuracy_score(y_true, y_preds), y_preds
 
 def save_progress(model, df, epoch):
@@ -72,6 +72,12 @@ def save_progress(model, df, epoch):
     if not os.path.exists(path):
         os.makedirs(path)
     mx = recent_epoch()
+    if mx>0 and args.load_checkpoint == False:
+        ans = input('Continuing will erase the checkpoint with the progress, Do you want to continue (y/n):')
+        if ans == 'y':
+            for file in glob.glob(os.path.join(path, '*')): os.remove(file)
+            mx = 0
+
     torch.save({
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
@@ -140,7 +146,7 @@ if __name__ == '__main__':
 
     # loss, Optimizer, Scheduler
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr = args.lr, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr = args.lr, weight_decay=1e-3) #Testing with increasing weight decay
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = args.step_size, gamma = 0.6)
     model = model.to(device)
     
