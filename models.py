@@ -279,6 +279,8 @@ class PointTransformer_FPMOD(nn.Module):
         x = self.fp1(xyz0.transpose(1,2), xyz1.transpose(1,2), feature_0, x)
         
         # x = self.dp6(x)
+
+        x = self.logits(x)
         
         x = x.permute(0, 2, 1)
         return x
@@ -301,25 +303,25 @@ class PointTransformer_FPADV(nn.Module):
         self.pt_last = StackedAttention(channels = embd*4, with_oa = with_oa)
         self.dp3 = nn.Dropout(p=self.dp)
 
-        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*4*2, kernel_size=1),
-                                   nn.BatchNorm1d(embd*4*4*2),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(embd*4*4*2, embd*4*2, kernel_size=1),
+                                   nn.BatchNorm1d(embd*4*2),
                                    nn.ReLU())
         self.dp4 = nn.Dropout(p=self.dp)
         
 
-        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*4*2 + embd*2), mlp=[embd*4*4], drp_add=False, p=self.dp)
+        self.fp2 = PointNetFeaturePropagation(in_channel=(embd*4*2 + embd*2), mlp=[embd*4], drp_add=False, p=self.dp)
         self.dp5 = nn.Dropout(p=self.dp)
 
 
-        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4*4 + embd), mlp=[embd*4*2], drp_add=False, p=self.dp)
+        self.fp1 = PointNetFeaturePropagation(in_channel=(embd*4 + embd), mlp=[embd*2], drp_add=False, p=self.dp)
         self.dp6 = nn.Dropout(p=self.dp)
 
 
 
-        self.conv3 = nn.Conv1d(embd*4*2, embd*4, kernel_size=1)
-        self.bn3 = nn.BatchNorm1d(embd*4)
+        # self.conv3 = nn.Conv1d(embd*4*2, embd*4, kernel_size=1)
+        # self.bn3 = nn.BatchNorm1d(embd*4)
 
-        self.logits = nn.Conv1d(embd*4, output_channels, 1)
+        self.logits = nn.Conv1d(embd*2, output_channels, 1)
 
     def forward(self, x):
         N = x.size(1)
@@ -357,11 +359,14 @@ class PointTransformer_FPADV(nn.Module):
         
         x = self.dp6(x)
 
-        x = F.relu(self.bn3(self.conv3(x)))
+        # x = F.relu(self.bn3(self.conv3(x)))
         x = self.logits(x)
         
         x = x.permute(0, 2, 1)
         return x
+
+model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer, 
+             'PCT_FP': PointTransformer_FP, 'PCT_FPMOD': PointTransformer_FPMOD, 'PCT_FPADV': PointTransformer_FPADV}
 
 if __name__ == '__main__':
 
