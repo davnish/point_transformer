@@ -92,7 +92,7 @@ class define():
 
         # loss, Optimizer, Scheduler
         self.loss_fn = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.Adam(model.parameters(), lr = args.lr, weight_decay=1e-4)
+        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr = args.lr, weight_decay=1e-2)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size = args.step_size, gamma = 0.6)
         self.model = self.model.to(self.device)
 
