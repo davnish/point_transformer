@@ -173,6 +173,8 @@ def grid_als(device, grid_size, points_taken, data, classification):
 
     return tiles_np, tiles_np_labels
 
+dataset = {'tald': tald, 'Dales': Dales}
+
 if __name__ == '__main__':
     import time
     start = time.time()

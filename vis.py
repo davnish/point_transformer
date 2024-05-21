@@ -3,14 +3,12 @@ import open3d as o3d
 import laspy 
 import os 
 import torch
-from model import PointTransformer, NaivePointTransformer, SimplePointTransformer, PointTransformer_FP
-from model import PointTransformer_FPMOD
-from model import PointTransformer_FPADV
-from dataset import Dales
+from models import model
+from datasets import dataset
 from torch.utils.data import DataLoader
 from train import test_loop
 from sklearn.metrics import classification_report
-from dataset import tald
+from datasets import tald
 np.random.seed(42)
 
 
@@ -32,10 +30,6 @@ import torch.nn as nn
 #         'PCT_FP': PointTransformer_FP, 'PCT_FPMOD': PointTransformer_FPMOD, 'PCT_FPADV': PointTransformer_FPADV}
 
 def visualize_model(model_path, model_name, dataset_name):
-    model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer, 
-        'PCT_FP': PointTransformer_FP, 'PCT_FPMOD': PointTransformer_FPMOD, 'PCT_FPADV': PointTransformer_FPADV}
-    
-    dataset = {'tald': tald, 'Dales': Dales}
     dataset = dataset[dataset_name]
     
     loader = DataLoader(dataset('cuda', 25, 4096, partition='test'), batch_size = 8)
