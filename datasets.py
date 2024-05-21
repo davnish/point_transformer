@@ -23,9 +23,6 @@ class tald(Dataset):
             self.label = None
             for fl in glob.glob(os.path.join("data", "tald", f"{partition}","*.laz")):
                 las = laspy.read(fl)
-                # las_classification = las_label_replace(las)
-                # df["Classification"].replace([3., 2., 6., 5. , 4., 7.], [0, 1, 2, 3, 4, 5], inplace=True)
-                # print(las.x.max() - las.x.min())
                 las_classification = las_label_replace(las, 'tald')
                 data, label = grid_als(device, grid_size, points_taken, las.xyz, las_classification)
 
@@ -106,21 +103,18 @@ class Dales(Dataset):
         return len(self.data)
 
 def las_label_replace(las, dataset):
+    las_classification = np.asarray(las.classification)
+
     # DALES
     if dataset == 'Dales':
-        las_classification = np.asarray(las.classification)
         mapping = {1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}
-        for old, new in mapping.items():
-            las_classification[las_classification == old] = new
-
     # TALD
-    # df["Classification"].replace([3., 2., 6., 5. , 4., 7.], [0, 1, 2, 3, 4, 5], inplace=True)
     elif dataset == 'tald':
-        las_classification = np.asarray(las.classification)
         mapping = {2:0, 3:1, 4:1, 5:7}
-        for old, new in mapping.items():
-            las_classification[las_classification == old] = new
-    
+
+    for old, new in mapping.items():
+        las_classification[las_classification == old] = new
+
     return las_classification
 
 def grid_als(device, grid_size, points_taken, data, classification):

@@ -11,7 +11,6 @@ from sklearn.metrics import classification_report
 from datasets import tald
 np.random.seed(42)
 
-
 colors = np.random.randn(8,3)
 def visualize(data, label):
 
@@ -25,11 +24,6 @@ def visualize(data, label):
 
     return pcd
 import torch.nn as nn
-
-# model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer, 
-#         'PCT_FP': PointTransformer_FP, 'PCT_FPMOD': PointTransformer_FPMOD, 'PCT_FPADV': PointTransformer_FPADV}
-
-
 
 def visualize_model(model_path, model_name, dataset_name):
     _dataset = dataset[dataset_name]
