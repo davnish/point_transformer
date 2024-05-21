@@ -5,7 +5,6 @@ from util import PointNetFeaturePropagation, sample_and_group, sample_and_group_
 import torch.nn.functional as F
 torch.manual_seed(42)
 
-
 class NaivePointTransformer(nn.Module):
     def __init__(self, embd = 64, with_oa = False):
         super().__init__()
@@ -370,6 +369,9 @@ class PointTransformer_FPADV(nn.Module):
         
         x = x.permute(0, 2, 1)
         return x
+
+model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer, 
+             'PCT_FP': PointTransformer_FP, 'PCT_FPMOD': PointTransformer_FPMOD, 'PCT_FPADV': PointTransformer_FPADV}
 
 if __name__ == '__main__':
 

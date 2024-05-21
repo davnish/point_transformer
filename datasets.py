@@ -168,7 +168,7 @@ def grid_als(device, grid_size, points_taken, data, classification):
     grid_lengths = [len(i) for i in grid_point_clouds.values()]
     mn_points = min(grid_lengths)
     mx_points = max(grid_lengths)
-    min_grid_points = (mx_points - mn_points) * 0.2
+    min_grid_points = (mx_points - mn_points) * 0.1
 
     for grid, label in zip(grid_point_clouds.values(), grid_point_clouds_label.values()):
 
@@ -198,6 +198,7 @@ def grid_als(device, grid_size, points_taken, data, classification):
 
     return tiles_np, tiles_np_labels
 
+dataset = {'tald': tald, 'Dales': Dales}
 
 if __name__ == '__main__':
     train = Dales('cuda', 25, 4096)

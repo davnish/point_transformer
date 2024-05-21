@@ -1,10 +1,8 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
-from model import PointTransformer, NaivePointTransformer, SimplePointTransformer, PointTransformer_FP
-from model import PointTransformer_FPMOD
-from model import PointTransformer_FPADV
-from dataset import Dales, tald
+from models import model
+from datasets import dataset
 import time
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 import argparse
@@ -68,16 +66,16 @@ def test_loop(model, loss_fn, loader, device):
     return total_loss/len(loader), accuracy_score(y_true, y_preds), balanced_accuracy_score(y_true, y_preds), y_preds
 
 class define():
-    def __init__(self, model, dataset, args):
+    def __init__(self, args):
 
         # Setting the device
         self.device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
 
         # Splitting the data
-        dataset = dataset[args.dataset]
-        dataset = dataset(self.device, args.grid_size, args.points_taken, partition='train')
+        self.dataset = dataset[args.dataset]
+        self.dataset = self.dataset(self.device, args.grid_size, args.points_taken, partition='train')
         print("Dataset Read Complete")
-        train_dataset, test_dataset = random_split(dataset, [0.7, 0.3]) 
+        train_dataset, test_dataset = random_split(self.dataset, [0.7, 0.3]) 
 
         # Setting the path for saving the checkpoint       
         self.path = path = os.path.join("checkpoints", f"model_{args.model_name}")
@@ -183,14 +181,8 @@ if __name__ == '__main__':
     parser.add_argument('--save_freq', type = int, default = 20)
     parser.add_argument('--dataset', type = str, default = 'Dales')
     args = parser.parse_args()
-
-    # Initialize the model
-    model = {'NPCT': NaivePointTransformer, 'SPCT': SimplePointTransformer, 'PCT': PointTransformer, 
-             'PCT_FP': PointTransformer_FP, 'PCT_FPMOD': PointTransformer_FPMOD, 'PCT_FPADV': PointTransformer_FPADV}
     
-    dataset = {'tald': tald, 'Dales': Dales}
-    
-    model = define(model, dataset, args)
+    model = define(args)
     model.training()
     
 
